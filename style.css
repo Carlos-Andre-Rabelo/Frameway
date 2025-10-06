@@ -1,0 +1,316 @@
+/* --- CONFIGURAÇÕES GERAIS E RESET --- */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Lato', sans-serif;
+    background-color: #f4f4f4;
+    color: #333;
+}
+
+.container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+/* --- CABEÇALHO --- */
+.main-header {
+    background-color: #fff;
+    padding: 15px 0;
+    border-bottom: 1px solid #ddd;
+}
+
+.main-header .container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.logo {
+    font-size: 24px;
+    font-weight: 900;
+    color: #333;
+    text-decoration: none;
+}
+
+.main-nav i {
+    font-size: 20px;
+    margin-left: 15px;
+    cursor: pointer;
+}
+
+/* --- SEÇÃO HERO --- */
+.hero-section {
+    height: 400px;
+    background-size: cover;
+    background-position: center;
+}
+
+/* --- DETALHES DO FILME --- */
+.movie-details {
+    background-color: #fff;
+    margin-top: -100px; /* Efeito de sobreposição */
+    position: relative;
+    z-index: 10;
+    padding: 30px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.movie-header h1 {
+    font-size: 36px;
+    font-weight: 900;
+}
+
+.movie-header .year {
+    font-weight: 400;
+    color: #777;
+}
+
+.movie-header .genres {
+    color: #555;
+    margin: 5px 0 10px;
+}
+
+.rating-stars {
+    color: #f5c518; /* Amarelo IMDb */
+}
+
+.movie-stats {
+    display: flex;
+    justify-content: space-between;
+    padding: 20px 0;
+    margin: 20px 0;
+    border-top: 1px solid #eee;
+    border-bottom: 1px solid #eee;
+}
+
+.stat {
+    text-align: center;
+}
+
+.stat-label {
+    display: block;
+    font-size: 12px;
+    color: #aaa;
+    margin-bottom: 5px;
+}
+
+.stat-value {
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.movie-content {
+    display: flex;
+    gap: 30px;
+}
+
+.left-column {
+    flex: 1;
+}
+
+.right-column {
+    flex: 2;
+}
+
+.movie-poster {
+    width: 100%;
+    max-width: 200px;
+    float: left;
+    margin-right: 20px;
+    margin-bottom: 10px;
+}
+
+.left-column h2 {
+    font-size: 14px;
+    font-weight: 700;
+    color: #aaa;
+    margin-bottom: 10px;
+    padding-bottom: 5px;
+    border-bottom: 2px solid #eee;
+}
+
+.left-column p {
+    line-height: 1.6;
+}
+
+.read-more {
+    background-color: #e50914; /* Vermelho Netflix */
+    color: #fff;
+    border: none;
+    padding: 10px 15px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 15px;
+}
+
+.director-info {
+    margin-bottom: 20px;
+}
+.director-info p {
+    margin-bottom: 10px;
+}
+
+.action-icons {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 20px;
+}
+
+.icon-item {
+    text-align: center;
+    cursor: pointer;
+}
+
+.icon-item i {
+    display: block;
+    width: 50px;
+    height: 50px;
+    border: 2px solid #ccc;
+    border-radius: 50%;
+    line-height: 46px; /* Ajuste para centralizar o ícone */
+    font-size: 20px;
+    color: #555;
+    margin-bottom: 5px;
+}
+.icon-item span {
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.right-column h2 {
+    font-size: 14px;
+    font-weight: 700;
+    color: #aaa;
+    margin-bottom: 10px;
+    padding-bottom: 5px;
+    border-bottom: 2px solid #eee;
+}
+
+.trailer-thumbnails {
+    display: flex;
+    gap: 10px;
+}
+.trailer-thumbnails img {
+    width: 100px;
+    height: auto;
+    cursor: pointer;
+}
+
+/* --- SEÇÃO DE CITAÇÃO --- */
+.quote-section {
+    padding: 40px 0;
+    text-align: center;
+}
+.quote-section p {
+    font-size: 24px;
+    font-style: italic;
+    color: #777;
+    margin-bottom: 10px;
+}
+.quote-section span {
+    font-weight: 700;
+    color: #aaa;
+}
+
+/* --- SEÇÃO DE FILMES RELACIONADOS --- */
+.related-movies {
+    background-color: #d9534f; /* Tom de vermelho */
+    color: #fff;
+    padding: 40px 0;
+}
+
+.related-movies h2 {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.carousel {
+    display: flex;
+    gap: 20px;
+    overflow-x: auto; /* Para permitir scroll horizontal se necessário */
+}
+
+.movie-card {
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.movie-card img {
+    width: 150px;
+    height: 225px;
+    object-fit: cover;
+    margin-bottom: 10px;
+}
+.movie-card p {
+    font-weight: 700;
+    font-size: 14px;
+}
+
+/* --- RODAPÉ --- */
+.main-footer {
+    background-color: #222;
+    color: #ccc;
+    padding: 40px 0;
+}
+
+.main-footer .container {
+    display: flex;
+    justify-content: space-between;
+    gap: 30px;
+}
+
+.footer-column {
+    flex: 1;
+}
+
+.footer-column h3 {
+    color: #fff;
+    margin-bottom: 15px;
+}
+
+.footer-column p, .footer-column span {
+    font-size: 14px;
+    line-height: 1.7;
+}
+
+.social-icons i {
+    margin-top: 15px;
+    margin-right: 10px;
+    font-size: 18px;
+    cursor: pointer;
+}
+
+.footer-column form input, .footer-column form button {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 1px solid #555;
+    background: #333;
+    color: #fff;
+}
+
+.footer-column form button {
+    background-color: #d9534f;
+    border: none;
+    cursor: pointer;
+    font-weight: 700;
+}
+
+.footer-column ul {
+    list-style: none;
+}
+.footer-column ul li a {
+    color: #ccc;
+    text-decoration: none;
+    font-size: 14px;
+    line-height: 1.8;
+}
+
+.footer-column ul li a:hover {
+    color: #fff;
+}
