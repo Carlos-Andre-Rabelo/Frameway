@@ -15,6 +15,8 @@
 </head>
 <body>
 
+    <div id="loading-bar"></div>
+
     <header class="main-header">
         <div class="container">
             <button class="hamburger-btn" aria-label="Menu">
@@ -32,8 +34,6 @@
             </nav>
         </div>
     </header>
-
-    <!-- ... (cabeçalho inalterado) ... -->
 
     <main>
         <section class="hero-section" style="background-image: url('');">
@@ -75,33 +75,27 @@
 
                 <div class="movie-content">
                     <div class="left-column">
-                        <img src="" alt="Movie Poster" class="movie-poster" id="movie-poster">
-                        <h2>SINOPSE</h2>
-                        <p id="movie-plot" class="fade-target">Carregando descrição...</p>
-                        <button class="read-more">LEIA MAIS</button>
-                    </div>
-                    <div class="right-column">
+                        <img src="" alt="Pôster do Filme" class="movie-poster" id="movie-poster">
                         <div class="director-info">
                             <p><strong>DIRETOR</strong><br><span id="director-name" class="fade-target">Carregando...</span></p>
                             <p><strong>ROTEIRISTA</strong><br><span id="writer-name" class="fade-target">Carregando...</span></p>
-                            <p><strong>ESTRELAS</strong><br><span id="stars-names" class="fade-target">Carregando...</span></p>
+                            <p><strong>ELENCO</strong><br><span id="stars-names" class="fade-target">Carregando...</span></p>
                         </div>
-
+                        <h2>SINOPSE</h2>
+                        <p id="movie-plot" class="fade-target">Carregando descrição...</p>
+                    </div>
+                    <div class="right-column">
                         <div class="action-icons">
                             <div class="icon-item"><i class="fas fa-users"></i><span>Elenco</span></div>
                             <div class="icon-item"><i class="fas fa-trophy"></i><span>Prêmios</span></div>
-                            <div class="icon-item"><i class="fas fa-file-alt"></i><span>Sinopse</span></div>
                             <div class="icon-item"><i class="fas fa-images"></i><span>Galeria</span></div>
                             <div class="icon-item"><i class="fas fa-quote-right"></i><span>Citações</span></div>
                             <div class="icon-item"><i class="fas fa-info-circle"></i><span>Fatos</span></div>
                         </div>
 
                         <h2>TRAILER</h2>
-                        <div class="trailer-thumbnails">
-                            <!-- Thumbnails do trailer podem ser carregados dinamicamente -->
-                            <img src="images/trailer-thumb1.jpg" alt="Trailer thumbnail 1">
-                            <img src="images/trailer-thumb2.jpg" alt="Trailer thumbnail 2">
-                            <img src="images/trailer-thumb3.jpg" alt="Trailer thumbnail 3">
+                        <div id="trailer-container" class="trailer-container">
+                            <!-- O trailer será inserido aqui pelo JavaScript -->
                         </div>
                     </div>
                 </div>

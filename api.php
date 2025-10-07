@@ -38,6 +38,12 @@ if (isset($_GET['movie_id'])) {
     if ($movieId) {
         $endpoint = $baseUrl . $movieId . '/images' . "?api_key={$apiKey}"; // Não precisa de &language aqui
     }
+} elseif (isset($_GET['videos_for'])) {
+    $movieId = intval($_GET['videos_for']);
+    if ($movieId) {
+        // O parâmetro de idioma é útil aqui para obter os trailers corretos
+        $endpoint = $baseUrl . $movieId . '/videos' . $params;
+    }
 }
 
 // Se um endpoint válido foi definido, faz a requisição
@@ -60,7 +66,7 @@ if ($endpoint) {
     
     curl_close($ch);
 } else {
-    $response = json_encode(['error' => 'Requisição inválida. Especifique um dos seguintes: movie_id, credits_for, related_to, search, images_for.']);
+    $response = json_encode(['error' => 'Requisição inválida. Especifique um dos seguintes: movie_id, credits_for, related_to, search, images_for, videos_for.']);
     http_response_code(400);
 }
 

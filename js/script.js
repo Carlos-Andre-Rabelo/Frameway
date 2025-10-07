@@ -156,31 +156,30 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Lógica para o botão "LEIA MAIS" da sinopse
-    const readMoreBtn = document.querySelector('.read-more');
-    const moviePlot = document.getElementById('movie-plot');
-
-    if (readMoreBtn && moviePlot) {
-        readMoreBtn.addEventListener('click', () => {
-            moviePlot.classList.toggle('expanded');
-            if (moviePlot.classList.contains('expanded')) {
-                readMoreBtn.textContent = 'LER MENOS';
-            } else {
-                readMoreBtn.textContent = 'LEIA MAIS';
-            }
-        });
-    }
-
     // Configura os botões do carrossel uma única vez
     setupCarouselButtons();
 });
 
 function loadMovieData(movieId) {
+    const loadingBar = document.getElementById('loading-bar');
+    const mainElement = document.querySelector('main');
+
+    // 1. Inicia o carregamento: reseta e exibe a barra, inicia o fade-out
+    if (loadingBar) {
+        loadingBar.classList.add('inactive'); // Reseta para 0% sem animação
+        // Força o navegador a aplicar a classe 'inactive' antes de remover
+        loadingBar.offsetHeight; 
+        loadingBar.classList.remove('inactive');
+        loadingBar.style.width = '70%'; // Anima a barra até 70%
+    }
+
     // 1. Seleciona todos os elementos de conteúdo e os torna invisíveis (fade-out)
     const fadeTargets = document.querySelectorAll('.fade-target');
     fadeTargets.forEach(el => {
         el.style.opacity = '0';
     });
+
+    if (mainElement) mainElement.classList.add('background-loading'); // Inicia o fade-out do fundo
 
     // 2. Espera a animação de fade-out terminar para então carregar os novos dados
     setTimeout(() => { // O tempo deve ser igual ou maior que a transição no CSS
@@ -190,7 +189,7 @@ function loadMovieData(movieId) {
             behavior: 'smooth'
         });
 
-        fetchAndProcess(`api.php?movie_id=${movieId}&language=pt-BR`, updateMovieDetails);
+        fetchAndProcess(`api.php?movie_id=${movieId}&language=pt-BR`, (movie) => updateMovieDetails(movie, movieId));
         fetchAndProcess(`api.php?credits_for=${movieId}`, updateMovieCredits);
         fetchAndProcess(`api.php?related_to=${movieId}`, updateRelatedMovies);
     }, 300); 
@@ -223,13 +222,35 @@ function fetchAndProcess(url, callback) {
 
 const imageBaseUrl = 'https://image.tmdb.org/t/p/';
 
-function updateMovieDetails(movie) {
-    const mainContent = document.querySelector('main');
+function updateMovieDetails(movie, movieId) {
+    const mainElement = document.querySelector('main');
 
-    if (mainContent && movie.backdrop_path) {
+    // Pré-carrega a imagem de fundo para garantir que o fade-in seja suave
+    if (mainElement && movie.backdrop_path) {
         const backdropUrl = `${imageBaseUrl}original${movie.backdrop_path}`;
-        // Define a variável CSS para a imagem de fundo no pseudo-elemento do <main>
-        mainContent.style.setProperty('--bg-image', `url('${backdropUrl}')`);
+        const img = new Image();
+        img.src = backdropUrl;
+        img.onload = () => {
+            // 1. Define a nova imagem de fundo
+            mainElement.style.setProperty('--bg-image', `url('${backdropUrl}')`);
+            // 2. Remove a classe de carregamento para iniciar o fade-in
+            mainElement.classList.remove('background-loading');
+        };
+        img.onerror = () => {
+            // Caso a imagem falhe, remove a classe mesmo assim para não travar a UI
+            mainElement.classList.remove('background-loading');
+            console.error("Falha ao carregar a imagem de fundo:", backdropUrl);
+        };
+    } else if (mainElement) {
+        // Se não houver imagem, remove a classe de carregamento imediatamente
+        mainElement.classList.remove('background-loading');
+    }
+
+    // Completa a barra de carregamento e a esconde
+    const loadingBar = document.getElementById('loading-bar');
+    if (loadingBar) {
+        loadingBar.style.width = '100%';
+        setTimeout(() => loadingBar.classList.add('inactive'), 500); // Esconde após completar
     }
 
     const movieTitle = document.getElementById('movie-title');
@@ -261,27 +282,23 @@ function updateMovieDetails(movie) {
     }
     if (moviePlot) moviePlot.textContent = movie.overview;
 
-    // Lógica para exibir ou esconder o botão "LEIA MAIS"
-    const readMoreBtn = document.querySelector('.read-more');
-    if (moviePlot && readMoreBtn) {
-        // Reseta o estado antes de verificar a altura
-        moviePlot.classList.remove('expanded');
-        readMoreBtn.textContent = 'LEIA MAIS';
-
-        // Verifica se o conteúdo é maior que a área visível
-        if (moviePlot.scrollHeight > moviePlot.clientHeight) {
-            readMoreBtn.style.display = 'block';
-        } else {
-            readMoreBtn.style.display = 'none';
-        }
-    }
-
     // 3. Torna os elementos visíveis novamente para iniciar o fade-in
     const fadeTargets = document.querySelectorAll('.fade-target');
     // Usar um pequeno timeout garante que o navegador processe as atualizações de conteúdo antes de iniciar a animação
     setTimeout(() => {
         fadeTargets.forEach(el => el.style.opacity = '1');
     }, 50);
+
+    // AGORA, com os detalhes do filme carregados, buscamos o trailer
+    // Usamos Promise.all para buscar vídeos e imagens simultaneamente
+    Promise.all([
+        fetch(`api.php?videos_for=${movieId}`).then(res => res.json()),
+        fetch(`api.php?images_for=${movieId}`).then(res => res.json())
+    ]).then(([videos, images]) => {
+        updateMovieTrailer(videos, images);
+    }).catch(error => {
+        console.error("Falha ao buscar dados do trailer ou imagens:", error);
+    });
 }
 
 /**
@@ -327,6 +344,67 @@ function updateMovieCredits(credits) {
     document.querySelectorAll('#director-name, #writer-name, #stars-names').forEach(el => {
         el.style.opacity = '1';
     });
+}
+
+/**
+ * Encontra o trailer oficial e o exibe na página.
+ * @param {object} videos - O objeto de resposta da API com a lista de vídeos.
+ */
+function updateMovieTrailer(videos, images) {
+    const trailerContainer = document.getElementById('trailer-container');
+    if (!trailerContainer) return;
+
+    trailerContainer.innerHTML = ''; // Limpa o container
+
+    if (videos.results && videos.results.length > 0) {
+        // Procura por um trailer oficial do site YouTube
+        const officialTrailer = videos.results.find(video => 
+            video.site === 'YouTube' && video.type === 'Trailer' && video.official
+        );
+        
+        // Se não encontrar um oficial, pega o primeiro trailer do YouTube que encontrar
+        const trailer = officialTrailer || videos.results.find(video => video.site === 'YouTube' && video.type === 'Trailer');
+
+        if (trailer) {
+            let backdropUrl;
+            // Tenta pegar a segunda imagem de backdrop. Se não existir, usa a primeira.
+            if (images && images.backdrops && images.backdrops.length > 1) {
+                backdropUrl = `${imageBaseUrl}w780${images.backdrops[1].file_path}`;
+            } else if (images && images.backdrops && images.backdrops.length > 0) {
+                // Se não houver uma segunda, usa a primeira
+                backdropUrl = `${imageBaseUrl}w780${images.backdrops[0].file_path}`;
+            } else {
+                // Fallback para a thumb do YouTube se não houver backdrops
+                backdropUrl = `https://img.youtube.com/vi/${trailer.key}/hqdefault.jpg`;
+            }
+
+            // Em vez de um link, criamos um botão ou div clicável
+            trailerContainer.innerHTML = `
+                <div class="trailer-link" data-video-key="${trailer.key}" role="button" tabindex="0" aria-label="Play trailer">
+                    <img src="${backdropUrl}" alt="Thumbnail do trailer de ${trailer.name}">
+                    <i class="fab fa-youtube play-icon"></i>
+                </div>
+            `;
+
+            // Adiciona o evento de clique para tocar o vídeo
+            trailerContainer.querySelector('.trailer-link').addEventListener('click', (e) => {
+                const videoKey = e.currentTarget.dataset.videoKey;                
+                // Substitui o conteúdo do container pelo player de vídeo
+                trailerContainer.innerHTML = `
+                    <div class="video-player-wrapper">
+                        <iframe src="https://www.youtube.com/embed/${videoKey}?autoplay=1&rel=0" 
+                                frameborder="0" 
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                                allowfullscreen></iframe>
+                    </div>
+                `;
+            });
+            return;
+        }
+    }
+
+    // Se nenhum trailer for encontrado
+    trailerContainer.innerHTML = '<p>Nenhum trailer disponível.</p>';
 }
 
 function updateRelatedMovies(related) {

@@ -11,6 +11,27 @@ body {
     color: #333;
 }
 
+/* --- BARRA DE CARREGAMENTO --- */
+#loading-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 0%; /* Começa com largura 0 */
+    height: 3px; /* Altura fina */
+    background-color: #ff000d; /* Vermelho vibrante */
+    z-index: 9999; /* Garante que fique acima de tudo */
+    transition: width 0.4s ease-out, opacity 0.5s ease 0.5s; /* Transição suave para largura e para sumir */
+    opacity: 1;
+}
+
+/* Estado inicial (invisível/inativo) */
+#loading-bar.inactive {
+    width: 0%;
+    opacity: 0;
+    transition: width 0s, opacity 0s; /* Remove transição ao resetar */
+}
+
+
 /* --- ESTRUTURA PRINCIPAL E FUNDO DESFOCADO --- */
 main {
     position: relative; /* Necessário para o posicionamento do pseudo-elemento */
@@ -32,7 +53,12 @@ main::before {
     background-position: center;
     background-attachment: fixed; /* Cria o efeito parallax */
     filter: blur(var(--bg-blur, 0px)); /* Aplica o blur usando uma variável CSS */
-    transition: filter 0.2s linear;
+    opacity: 1;
+    transition: filter 0.2s linear, opacity 0.3s ease-in-out; /* Adiciona transição de opacidade */
+}
+
+main.background-loading::before {
+    opacity: 0; /* Esconde o fundo durante o carregamento */
 }
 
 /* ... (cabeçalho inalterado) ... */ 
@@ -46,13 +72,11 @@ main::before {
     z-index: 1100; /* Garante que fique acima de outros elementos */
     background-color: transparent; /* Começa transparente */
     padding: 15px 0;
-    /* Transição suave para a cor de fundo e a sombra */
     transition: background-color 0.4s ease, box-shadow 0.4s ease;
 }
 
 .main-header.scrolled {
     background-color: #ffffff; /* Fundo branco sólido */
-    /* Adiciona uma sombra sutil para destacar o cabeçalho do conteúdo */
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
@@ -73,22 +97,29 @@ main::before {
 .hamburger-btn {
     background: none;
     border: none;
-    color: #333;
+    color: #333; /* Cor cinza mais escura */
     font-size: 22px;
     cursor: pointer;
     padding: 5px;
-    z-index: 1; /* Garante que fique clicável */
+    z-index: 1;
+}
+
+.main-header.scrolled .hamburger-btn {
+    color: #333;
 }
 
 .logo {
     font-size: 24px;
     font-weight: 900;
-    color: #333;
+    color: #333; /* Cor cinza mais escura */
     text-decoration: none;
-    /* Centralização absoluta */
     position: absolute;
     left: 50%;
     transform: translateX(-50%);
+}
+
+.main-header.scrolled .logo {
+    color: #222222;
 }
 
 .main-nav {
@@ -129,14 +160,17 @@ main::before {
     right: 5px; /* Posição inicial à direita */
     transform: translateY(-50%);
     background-color: transparent;
-    color: #333;
+    color: #333; /* Cor cinza mais escura */
     border: none;
     padding: 5px; /* Pequeno padding para a área de clique */
     cursor: pointer;
     font-size: 20px;
-    /* Transição para todas as propriedades que mudam */
     transition: all 0.4s ease;
-    z-index: 2; /* Garante que o botão fique sobre o input durante a transição */
+    z-index: 2;
+}
+
+.main-header.scrolled .search-form button {
+    color: #333;
 }
 
 /* Estilos quando a busca está ativa/expandida */
@@ -282,22 +316,26 @@ main::before {
 
 .movie-content {
     display: flex;
-    gap: 30px;
+    gap: 50px; /* Aumenta o espaço entre as colunas */
 }
 
 .left-column {
-    flex: 1;
+    flex: 2; /* Aumenta a proporção para dar mais espaço */
 }
 
 .right-column {
-    flex: 2;
+    flex: 1; /* Diminui a proporção */
+    padding-top: 10px; /* Alinha melhor o topo com o conteúdo da esquerda */
+    display: flex; /* Transforma a coluna em um container flex */
+    flex-direction: column; /* Organiza os itens verticalmente */
 }
 
 .movie-poster {
     width: 100%;
-    max-width: 200px;
+    max-width: 250px; /* Aumenta o tamanho do pôster */
     float: left;
     margin-right: 20px;
+    /* A margem inferior foi movida para o .director-info para melhor controle */
     margin-bottom: 10px;
 }
 
@@ -312,29 +350,14 @@ main::before {
 
 .left-column p {
     line-height: 1.6;
-    /* Estilos para o texto recolhido */
-    max-height: 95px; /* Limita a altura para aproximadamente 4-5 linhas */
-    overflow: hidden;
-    transition: max-height 0.5s ease-in-out;
-}
-
-/* Classe para expandir o texto */
-.left-column p.expanded {
-    max-height: 1000px; /* Um valor alto para garantir que todo o texto seja exibido */
-}
-
-.read-more {
-    background-color: #e50914; /* Vermelho Netflix */
-    color: #fff;
-    border: none;
-    padding: 10px 15px;
-    font-weight: 700;
-    cursor: pointer;
-    margin-top: 15px;
+    /* Remove a limitação de altura para exibir a sinopse completa */
+    max-height: none;
+    overflow: visible;
 }
 
 .director-info {
-    margin-bottom: 20px;
+    /* Adiciona espaço abaixo das informações do diretor, antes da sinopse */
+    margin-bottom: 30px; 
 }
 .director-info p {
     margin-bottom: 10px;
@@ -376,13 +399,40 @@ main::before {
     border-bottom: 2px solid #eee;
 }
 
-.trailer-thumbnails {
+.trailer-container {
+    position: relative; /* Para posicionar o ícone de play */
+    flex-grow: 1; /* Permite que o container cresça e ocupe o espaço vertical restante */
     display: flex;
-    gap: 10px;
+    align-items: center; /* Centraliza verticalmente */
+    justify-content: center; /* Centraliza horizontalmente também */
 }
-.trailer-thumbnails img {
-    width: 100px;
+
+.trailer-link {
+    display: block;
+    position: relative;
+    cursor: pointer;
+}
+
+.trailer-link img {
+    width: 100%;
     height: auto;
+    display: block; /* Remove espaço extra abaixo da imagem */
+    border-radius: 5px;
+}
+
+.trailer-link .play-icon {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 60px;
+    color: rgba(255, 0, 0, 0.85);
+    transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.trailer-link:hover .play-icon {
+    transform: translate(-50%, -50%) scale(1.15);
+    color: #ff0000;
     cursor: pointer;
 }
 
@@ -404,7 +454,7 @@ main::before {
 
 /* --- SEÇÃO DE FILMES RELACIONADOS --- */
 .related-movies {
-    background-color: #d9534f; /* Tom de vermelho */
+    background-color: #ed4b46; /* Tom de vermelho */
     color: #fff;
     padding: 40px 0;
 }
@@ -552,4 +602,23 @@ main::before {
     border-radius: 10px; /* Cantos arredondados */
     border: 2px solid transparent; /* Cria um padding visual */
     background-clip: content-box;
+}
+
+/* Estilos para o player de vídeo que aparece no lugar da thumbnail */
+.trailer-container .video-player-wrapper {
+    position: relative;
+    padding-bottom: 56.25%; /* Proporção 16:9 para o vídeo */
+    height: 0;
+    overflow: hidden;
+    background-color: #000;
+    border-radius: 5px; /* Mantém os cantos arredondados */
+    width: 100%; /* Garante que o player ocupe a largura total quando em um container flex */
+}
+
+.trailer-container .video-player-wrapper iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
 }
