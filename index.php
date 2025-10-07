@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Movie Profile - Spirited Away</title>
+    <title>Frameway</title>
     
     <link rel="stylesheet" href="style.css">
     
@@ -17,10 +17,15 @@
 
     <header class="main-header">
         <div class="container">
-            <a href="#" class="logo">SCRN</a>
+            <a href="/Frameway/" class="logo">FRAMEWAY</a>
             <nav class="main-nav">
-                <i class="fas fa-search"></i>
-                <i class="fas fa-user"></i>
+                <div class="search-container">
+                    <form id="search-form" class="search-form">
+                        <input type="text" id="search-input" placeholder="Buscar filme..." aria-label="Buscar filme" autocomplete="off">
+                        <button type="submit" aria-label="Buscar"><i class="fas fa-search"></i></button>
+                    </form>
+                    <div id="search-suggestions" class="search-suggestions"></div>
+                </div>
             </nav>
         </div>
     </header>
@@ -34,9 +39,9 @@
         <div class="container">
             <section class="movie-details">
                 <div class="movie-header">
-                    <h1><span id="movie-title">CARREGANDO...</span> <span class="year" id="movie-year"></span></h1>
-                    <p class="genres" id="movie-genres"></p>
-                    <div class="rating-stars">
+                    <h1><span id="movie-title" class="fade-target">CARREGANDO...</span> <span class="year fade-target" id="movie-year"></span></h1>
+                    <p class="genres fade-target" id="movie-genres"></p>
+                    <div class="rating-stars fade-target">
                         <!-- A lógica das estrelas pode ser implementada depois com JS -->
                         <i class="fas fa-star"></i>
                         <i class="fas fa-star"></i>
@@ -48,45 +53,44 @@
 
                 <div class="movie-stats">
                     <div class="stat">
-                        <span class="stat-label">RATING</span>
-                        <span class="stat-value" id="stat-rating">N/A</span>
+                        <span class="stat-label">AVALIAÇÃO</span>
+                        <span class="stat-value fade-target" id="stat-rating">N/A</span>
                     </div>
                     <div class="stat">
-                        <span class="stat-label">RUNNING TIME</span>
-                        <span class="stat-value" id="stat-runtime">N/A</span>
+                        <span class="stat-label">DURAÇÃO</span>
+                        <span class="stat-value fade-target" id="stat-runtime">N/A</span>
                     </div>
                     <div class="stat">
-                        <span class="stat-label">BUDGET</span>
-                        <span class="stat-value" id="stat-budget">N/A</span>
+                        <span class="stat-label">ORÇAMENTO</span>
+                        <span class="stat-value fade-target" id="stat-budget">N/A</span>
                     </div>
                     <div class="stat">
-                        <span class="stat-label">RELEASE DATE</span>
-                        <span class="stat-value" id="stat-release">N/A</span>
+                        <span class="stat-label">LANÇAMENTO</span>
+                        <span class="stat-value fade-target" id="stat-release">N/A</span>
                     </div>
                 </div>
 
                 <div class="movie-content">
                     <div class="left-column">
                         <img src="" alt="Movie Poster" class="movie-poster" id="movie-poster">
-                        <h2>PLOT</h2>
-                        <p id="movie-plot">Carregando descrição...</p>
-                        <button class="read-more">READ MORE</button>
+                        <h2>SINOPSE</h2>
+                        <p id="movie-plot" class="fade-target">Carregando descrição...</p>
+                        <button class="read-more">LEIA MAIS</button>
                     </div>
                     <div class="right-column">
                         <div class="director-info">
-                            <!-- Informações do diretor/elenco podem exigir outra chamada à API (créditos) -->
-                            <p><strong>DIRECTOR</strong><br>A ser carregado</p>
-                            <p><strong>WRITER</strong><br>A ser carregado</p>
-                            <p><strong>STARS</strong><br>A ser carregado</p>
+                            <p><strong>DIRETOR</strong><br><span id="director-name" class="fade-target">Carregando...</span></p>
+                            <p><strong>ROTEIRISTA</strong><br><span id="writer-name" class="fade-target">Carregando...</span></p>
+                            <p><strong>ESTRELAS</strong><br><span id="stars-names" class="fade-target">Carregando...</span></p>
                         </div>
 
                         <div class="action-icons">
-                            <div class="icon-item"><i class="fas fa-users"></i><span>Cast & Crew</span></div>
-                            <div class="icon-item"><i class="fas fa-trophy"></i><span>Awards</span></div>
-                            <div class="icon-item"><i class="fas fa-file-alt"></i><span>Plot</span></div>
-                            <div class="icon-item"><i class="fas fa-images"></i><span>Gallery</span></div>
-                            <div class="icon-item"><i class="fas fa-quote-right"></i><span>Quotes</span></div>
-                            <div class="icon-item"><i class="fas fa-info-circle"></i><span>Facts</span></div>
+                            <div class="icon-item"><i class="fas fa-users"></i><span>Elenco</span></div>
+                            <div class="icon-item"><i class="fas fa-trophy"></i><span>Prêmios</span></div>
+                            <div class="icon-item"><i class="fas fa-file-alt"></i><span>Sinopse</span></div>
+                            <div class="icon-item"><i class="fas fa-images"></i><span>Galeria</span></div>
+                            <div class="icon-item"><i class="fas fa-quote-right"></i><span>Citações</span></div>
+                            <div class="icon-item"><i class="fas fa-info-circle"></i><span>Fatos</span></div>
                         </div>
 
                         <h2>TRAILER</h2>
@@ -113,14 +117,54 @@
     <section class="related-movies">
         <!-- A seção de filmes relacionados exigiria uma chamada de API separada -->
         <div class="container">
-            <h2>RELATED MOVIES</h2>
-            <div class="carousel">
-                <p style="text-align: center; width: 100%;">Filmes relacionados podem ser carregados aqui.</p>
+            <h2>FILMES RELACIONADOS</h2>
+            <div class="carousel-wrapper">
+                <button id="prev-btn" class="carousel-arrow prev" aria-label="Anterior">&#10094;</button>
+                <div class="carousel">
+                    <!-- O conteúdo será preenchido pelo script.js -->
+                    <p style="text-align: center; width: 100%;">Carregando filmes relacionados...</p>
+                </div>
+                <button id="next-btn" class="carousel-arrow next" aria-label="Próximo">&#10095;</button>
             </div>
         </div>
     </section>
 
-    <!-- ... (rodapé inalterado) ... -->
+    <footer class="main-footer">
+        <div class="container">
+            <div class="footer-column">
+                <h3>FRAMEWAY</h3>
+                <p>123 Fictional Street, Farringdon, London<br>email@example.com<br>Tel: +44 (0)20 4567 8910</p>
+                <div class="social-icons">
+                    <i class="fab fa-facebook-f"></i>
+                    <i class="fab fa-twitter"></i>
+                    <i class="fab fa-instagram"></i>
+                </div>
+            </div>
+            <div class="footer-column">
+                <h3>NEWSLETTER</h3>
+                <p>Keep in the loop with our Screen updates by subscribing to our yummy newsletter.</p>
+                <form>
+                    <input type="text" placeholder="Name">
+                    <input type="email" placeholder="E-mail">
+                    <button type="submit">INSCREVER</button>
+                </form>
+            </div>
+            <div class="footer-column">
+                <h3>CITAÇÃO</h3>
+                <p>"Ooh, that's a bingo! Is that the way you say it? 'That's a bingo!'"</p>
+                <span>COL. HANS LANDA<br>INGLOURIOUS BASTERDS</span>
+            </div>
+            <div class="footer-column">
+                <h3>MENU</h3>
+                <ul>
+                    <li><a href="#">Filmes</a></li>
+                    <li><a href="#">Sobre</a></li>
+                    <li><a href="#">Contato</a></li>
+                    <li><a href="#">Índice</a></li>
+                    <li><a href="#">FAQs</a></li>
+                    <li><a href="#">Downloads</a></li>
+                </ul>
+            </div>
         </div>
     </footer>
 

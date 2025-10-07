@@ -11,17 +11,34 @@ body {
     color: #333;
 }
 
+/* --- ESTRUTURA PRINCIPAL E FUNDO DESFOCADO --- */
+main {
+    position: relative; /* Necessário para o posicionamento do pseudo-elemento */
+    overflow: hidden; /* Garante que o blur não vaze para fora */
+    background-color: #1a1a1a; /* Cor de fundo escura como fallback */
+}
+
+/* ... (cabeçalho inalterado) ... */
+
+/* --- CABEÇALHO --- */
+.main-header {
+    position: fixed; /* Fixa o cabeçalho no topo */
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 1100; /* Garante que fique acima de outros elementos */
+    background-color: rgba(255, 255, 255, 0.3); /* Fundo branco com mais transparência */
+    backdrop-filter: blur(10px); /* Aumenta o efeito de desfoque */
+    -webkit-backdrop-filter: blur(15px); /* Suporte para Safari */
+    padding: 15px 0;
+}
+
 .container {
     max-width: 1100px;
     margin: 0 auto;
     padding: 0 20px;
-}
-
-/* --- CABEÇALHO --- */
-.main-header {
-    background-color: #fff;
-    padding: 15px 0;
-    border-bottom: 1px solid #ddd;
+    position: relative; /* Garante que o conteúdo dentro do container fique acima do fundo */
+    z-index: 2; /* Define uma ordem de empilhamento maior que o hero e o fundo */
 }
 
 .main-header .container {
@@ -37,27 +54,100 @@ body {
     text-decoration: none;
 }
 
-.main-nav i {
-    font-size: 20px;
-    margin-left: 15px;
+.search-container {
+    position: relative; /* Essencial para posicionar as sugestões */
+}
+
+.search-form {
+    display: flex;
+    align-items: center;
+}
+
+.search-form input {
+    border: 1px solid #ccc;
+    padding: 8px 12px;
+    border-radius: 20px 0 0 20px;
+    outline: none;
+    font-family: 'Lato', sans-serif;
+    font-size: 14px;
+}
+
+.search-form button {
+    background-color: #333;
+    color: #fff;
+    border: 1px solid #333;
+    padding: 8px 12px;
     cursor: pointer;
+    border-radius: 0 20px 20px 0;
+    margin-left: -1px; /* Sobrepõe a borda do input */
+    font-size: 14px;
+}
+
+.search-suggestions {
+    display: none; /* Começa escondido */
+    position: absolute;
+    top: 100%; /* Logo abaixo do input */
+    left: 0;
+    right: 0;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-top: none;
+    z-index: 1000;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.suggestion-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    cursor: pointer;
+    font-size: 14px;
+    border-bottom: 1px solid #eee;
+}
+
+.suggestion-item img {
+    width: 40px;
+    height: 60px;
+    object-fit: cover;
+    flex-shrink: 0; /* Impede que a imagem encolha */
+    background-color: #eee; /* Cor de fundo para o caso da imagem não carregar */
+}
+
+.suggestion-item:last-child {
+    border-bottom: none;
+}
+
+.suggestion-item:hover {
+    background-color: #f4f4f4;
 }
 
 /* --- SEÇÃO HERO --- */
 .hero-section {
-    height: 400px;
+    height: 550px; /* Aumenta a altura da imagem principal */
+    position: relative; /* Garante que fique acima do fundo desfocado */
+    z-index: 1;
     background-size: cover;
     background-position: center;
+    /* Aplica um gradiente que mascara a parte inferior da imagem, fazendo-a desaparecer suavemente no fundo escuro */
+    -webkit-mask-image: linear-gradient(to bottom, black 75%, transparent 100%);
+    mask-image: linear-gradient(to bottom, black 75%, transparent 100%);
 }
 
 /* --- DETALHES DO FILME --- */
 .movie-details {
     background-color: #fff;
-    margin-top: -100px; /* Efeito de sobreposição */
+    margin-top: -150px; /* Efeito de sobreposição aumentado */
     position: relative;
-    z-index: 10;
+    z-index: 10; /* Mantém um z-index alto para garantir sobreposição correta dentro do seu container */
     padding: 30px;
     box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+/* Nova classe para controlar o fade de elementos de texto/conteúdo */
+.fade-target {
+    transition: opacity 0.3s ease-in-out;
 }
 
 .movie-header h1 {
@@ -136,6 +226,15 @@ body {
 
 .left-column p {
     line-height: 1.6;
+    /* Estilos para o texto recolhido */
+    max-height: 95px; /* Limita a altura para aproximadamente 4-5 linhas */
+    overflow: hidden;
+    transition: max-height 0.5s ease-in-out;
+}
+
+/* Classe para expandir o texto */
+.left-column p.expanded {
+    max-height: 1000px; /* Um valor alto para garantir que todo o texto seja exibido */
 }
 
 .read-more {
@@ -231,13 +330,49 @@ body {
 
 .carousel {
     display: flex;
-    gap: 20px;
-    overflow-x: auto; /* Para permitir scroll horizontal se necessário */
+    gap: 20px; /* Mantém o espaçamento */
+    transition: transform 0.5s ease-in-out;
+}
+
+.carousel-wrapper {
+    position: relative;
+    overflow: hidden; /* Movemos o overflow para o wrapper */
+    padding: 20px 0; /* Adiciona espaço vertical, mantendo as setas centralizadas */
+}
+
+.carousel-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: rgba(0, 0, 0, 0.5);
+    color: white;
+    border: none;
+    font-size: 24px;
+    padding: 10px;
+    cursor: pointer;
+    z-index: 10;
+    border-radius: 50%;
+    width: 45px;
+    height: 45px;
+    line-height: 20px;
+}
+.carousel-arrow.prev {
+    left: 10px; /* Move a seta para dentro da área visível */
+}
+.carousel-arrow.next {
+    right: 10px; /* Move a seta para dentro da área visível */
 }
 
 .movie-card {
     text-align: center;
     flex-shrink: 0;
+    width: 150px; /* Define uma largura fixa para o card */
+    cursor: pointer; /* Indica que o elemento é clicável */
+    transition: transform 0.2s ease-in-out; /* Adiciona uma transição suave */
+}
+
+.movie-card:hover {
+    transform: scale(1.05); /* Aumenta levemente o card ao passar o mouse */
 }
 
 .movie-card img {
@@ -245,6 +380,7 @@ body {
     height: 225px;
     object-fit: cover;
     margin-bottom: 10px;
+    border-radius: 7px; /* Adiciona cantos arredondados suaves */
 }
 .movie-card p {
     font-weight: 700;
