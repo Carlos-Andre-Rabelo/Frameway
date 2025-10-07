@@ -94,6 +94,10 @@ main.background-loading::before {
     align-items: center;
 }
 
+.hamburger-btn, .main-nav {
+    flex: 1; /* Faz com que ambos os lados ocupem o mesmo espaço */
+}
+
 .hamburger-btn {
     background: none;
     border: none;
@@ -102,6 +106,9 @@ main.background-loading::before {
     cursor: pointer;
     padding: 5px;
     z-index: 1;
+    display: flex; /* Adicionado para controlar o alinhamento do ícone interno */
+    justify-content: flex-start; /* Alinha o ícone à esquerda */
+    /* O conteúdo (ícone) é alinhado à esquerda dentro do seu espaço flex */
 }
 
 .main-header.scrolled .hamburger-btn {
@@ -113,9 +120,15 @@ main.background-loading::before {
     font-weight: 900;
     color: #333; /* Cor cinza mais escura */
     text-decoration: none;
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
+    /* A centralização agora é feita pelo flexbox do container pai */
+}
+
+/* Ajuste para telas médias onde a busca pode sobrepor o logo */
+@media (max-width: 1100px) and (min-width: 951px) {
+    .logo {
+        position: static;
+        transform: none;
+    }
 }
 
 .main-header.scrolled .logo {
@@ -140,17 +153,19 @@ main.background-loading::before {
 }
 
 .search-form input {
-    width: 0;
-    padding: 8px 0;
-    border: 1px solid transparent;
+    width: 220px; /* Largura fixa */
+    padding: 8px 40px 8px 12px; /* Padding para texto e ícone */
+    border: 1px solid #ccc;
     border-radius: 20px;
-    background-color: transparent; /* Garante que o fundo seja transparente para o blur */
+    background-color: rgba(255, 255, 255, 0.5); /* Fundo semitransparente */
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     outline: none;
     font-family: 'Lato', sans-serif;
     font-size: 14px;
-    /* Transição separada para o border-radius */
-    transition: width 0.4s ease, padding 0.4s ease, opacity 0.4s ease, background-color 0.4s ease, border-color 0.4s ease;
-    opacity: 0;
+    opacity: 1; /* Sempre visível */
+    /* Transição apenas para a borda ao abrir sugestões */
+    transition: border-radius 0.1s ease;
 }
 
 .search-form button {
@@ -173,26 +188,10 @@ main.background-loading::before {
     color: #333;
 }
 
-/* Estilos quando a busca está ativa/expandida */
-.search-container.active .search-form input {
-    width: 180px;
-    /* Aumenta o padding direito para não sobrepor o texto com o ícone */
-    padding: 8px 40px 8px 12px;
-    border-color: #ccc;
-    /* Efeito de blur forte */
-    background-color: rgba(255, 255, 255, 0.5); /* Fundo semitransparente é essencial */
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px); /* Para compatibilidade com Safari */
-    opacity: 1;
-    border-radius: 20px; /* Borda totalmente arredondada */
-    transition-duration: 0.4s; /* Garante que a transição de volta seja suave */
-}
-
 /* Quando as sugestões estão abertas, os cantos inferiores do input ficam retos */
 .search-container.suggestions-open .search-form input {
     border-bottom-left-radius: 0;
     border-bottom-right-radius: 0;
-    transition-duration: 0.1s; /* A mudança de borda é rápida */
 }
 
 .search-suggestions {
@@ -557,13 +556,15 @@ main.background-loading::before {
     cursor: pointer;
 }
 
-.footer-column form input, .footer-column form button {
+.footer-column form input, .footer-column form textarea, .footer-column form button {
     width: 100%;
     padding: 10px;
     margin-bottom: 10px;
     border: 1px solid #555;
     background: #333;
     color: #fff;
+    font-family: 'Lato', sans-serif; /* Garante consistência da fonte */
+    resize: vertical; /* Permite redimensionamento vertical */
 }
 
 .footer-column form button {
@@ -621,4 +622,200 @@ main.background-loading::before {
     left: 0;
     width: 100%;
     height: 100%;
+}
+
+/* --- NAVEGAÇÃO MOBILE --- */
+.mobile-nav {
+    display: none; /* Escondido por padrão */
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background-color: #ffffff;
+    box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
+    z-index: 1200;
+    justify-content: space-around;
+    padding: 8px 0;
+}
+
+.mobile-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-decoration: none;
+    color: #888;
+    font-size: 10px;
+    gap: 4px;
+    transition: color 0.2s ease;
+}
+
+.mobile-nav-item i {
+    font-size: 20px;
+}
+
+.mobile-nav-item.active,
+.mobile-nav-item:hover {
+    color: #d9534f; /* Vermelho do tema */
+}
+
+/* --- MEDIA QUERIES PARA RESPONSIVIDADE --- */
+@media (max-width: 950px) {
+    .container {
+        padding: 0 15px;
+    }
+
+    /* --- AJUSTES NO CABEÇALHO --- */
+    .main-header .container {
+        justify-content: center; /* Centraliza a barra de busca */
+    }
+
+    .hamburger-btn {
+        display: none; /* Esconde o botão de menu */
+    }
+
+    .main-nav {
+        display: flex; /* Garante que a barra de busca esteja visível */
+        justify-content: center;
+        flex-grow: 1;
+    }
+
+    .logo {
+        display: none; /* Esconde o título do site na versão mobile */
+    }
+
+    .search-form input {
+        background-color: rgba(255, 255, 255, 0.35); /* Mais translúcido */
+        backdrop-filter: blur(30px);
+        -webkit-backdrop-filter: blur(12px); /* Mais blur */
+        border-color: rgba(255, 255, 255, 0.4); /* Borda mais sutil para combinar */
+        color: #fff; /* Cor do texto para branco para melhor contraste */
+    }
+
+    .main-header.scrolled {
+        background-color: transparent;
+        box-shadow: none;
+    }
+
+    .main-header.scrolled .logo {
+        color: #222; /* Cor quando o header tem fundo branco */
+    }
+
+    /* --- AJUSTES NO BACKDROP E HERO --- */
+    main::before {
+        background-attachment: scroll; /* Imagem rola com a página */
+        filter: blur(0) !important; /* Remove o blur e impede que o JS o adicione */
+        height: 45vh; /* Altura do backdrop */
+        
+        /* Cria o efeito de fade na parte inferior do backdrop */
+        -webkit-mask-image: linear-gradient(to bottom, black 70%, transparent 100%);
+        mask-image: linear-gradient(to bottom, black 70%, transparent 100%);
+    }
+
+    .hero-section {
+        height: 35vh; /* Reduz a altura para o conteúdo aparecer mais cedo */
+    }
+
+    /* --- AJUSTES NO CONTEÚDO PRINCIPAL --- */
+    main {
+        padding-bottom: 60px; /* Adiciona espaço para não ser coberto pela nav mobile */
+    }
+
+    .movie-details {
+        margin-top: 0; /* Remove a sobreposição */
+        padding: 20px;
+    }
+
+    .movie-header h1 {
+        font-size: 28px;
+    }
+
+    .movie-stats {
+        flex-wrap: wrap; /* Permite que os itens quebrem a linha */
+        gap: 20px;
+        justify-content: space-around;
+    }
+
+    .stat {
+        flex-basis: 40%; /* Cada item ocupa cerca de 40% da largura */
+    }
+
+    .movie-content {
+        flex-direction: column; /* Empilha as colunas */
+        gap: 25px; /* Reduz o espaçamento */
+    }
+
+    .poster-info-wrapper {
+        display: flex; /* Coloca o poster e o texto lado a lado */
+        gap: 15px;
+        align-items: flex-start;
+    }
+
+    .left-column h2 {
+        margin-top: 25px; /* Adiciona espaço acima do título "SINOPSE" */
+    }
+
+    .movie-poster {
+        float: none; /* Remove o float */
+        margin: 0; /* Remove margens automáticas */
+        max-width: 160px; /* Aumenta o tamanho do poster */
+        flex-shrink: 0; /* Impede que o poster encolha */
+    }
+
+    .right-column {
+        padding-top: 0;
+        /* order: -1; foi removido para que o poster fique acima */
+    }
+
+    .action-icons {
+        justify-content: space-between; /* Espaça melhor em telas menores */
+        margin-bottom: 25px;
+    }
+
+    .icon-item i {
+        width: 45px;
+        height: 45px;
+        line-height: 41px;
+        font-size: 18px;
+    }
+    
+    .trailer-container {
+        max-width: 400px; /* Limita a largura máxima do trailer */
+        margin: 0 auto; /* Centraliza o container do trailer */
+    }
+
+    /* --- AJUSTES NO CARROSSEL --- */
+    .carousel-wrapper {
+        padding: 10px 0;
+    }
+
+    .carousel-arrow {
+        width: 35px;
+        height: 35px;
+        font-size: 18px;
+        line-height: 15px;
+    }
+
+    .carousel-arrow.prev { left: 5px; }
+    .carousel-arrow.next { right: 5px; }
+
+    /* --- AJUSTES NO RODAPÉ --- */
+    .main-footer .container {
+        flex-direction: column; /* Empilha as colunas do rodapé */
+        gap: 40px;
+        text-align: center; /* Centraliza o conteúdo */
+    }
+
+    .social-icons {
+        justify-content: center;
+        display: flex;
+    }
+
+    .footer-column ul {
+        padding-left: 0; /* Remove o padding padrão da lista */
+    }
+
+    /* --- EXIBE A NAVEGAÇÃO MOBILE --- */
+    .mobile-nav {
+        display: flex;
+    }
 }

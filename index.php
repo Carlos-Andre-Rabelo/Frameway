@@ -75,11 +75,13 @@
 
                 <div class="movie-content">
                     <div class="left-column">
-                        <img src="" alt="Pôster do Filme" class="movie-poster" id="movie-poster">
-                        <div class="director-info">
-                            <p><strong>DIRETOR</strong><br><span id="director-name" class="fade-target">Carregando...</span></p>
-                            <p><strong>ROTEIRISTA</strong><br><span id="writer-name" class="fade-target">Carregando...</span></p>
-                            <p><strong>ELENCO</strong><br><span id="stars-names" class="fade-target">Carregando...</span></p>
+                        <div class="poster-info-wrapper">
+                            <img src="" alt="Pôster do Filme" class="movie-poster" id="movie-poster">
+                            <div class="director-info">
+                                <p><strong>DIRETOR</strong><br><span id="director-name" class="fade-target">Carregando...</span></p>
+                                <p><strong>ROTEIRISTA</strong><br><span id="writer-name" class="fade-target">Carregando...</span></p>
+                                <p><strong>ELENCO</strong><br><span id="stars-names" class="fade-target">Carregando...</span></p>
+                            </div>
                         </div>
                         <h2>SINOPSE</h2>
                         <p id="movie-plot" class="fade-target">Carregando descrição...</p>
@@ -138,12 +140,13 @@
                 </div>
             </div>
             <div class="footer-column">
-                <h3>NEWSLETTER</h3>
-                <p>Keep in the loop with our Screen updates by subscribing to our yummy newsletter.</p>
+                <h3>ENTRE EM CONTATO</h3>
+                <p>Tem alguma dúvida ou sugestão? Mande uma mensagem para nós.</p>
                 <form>
-                    <input type="text" placeholder="Name">
+                    <input type="text" placeholder="Nome">
                     <input type="email" placeholder="E-mail">
-                    <button type="submit">INSCREVER</button>
+                    <textarea placeholder="Sua mensagem..." rows="4"></textarea>
+                    <button type="submit">ENVIAR</button>
                 </form>
             </div>
             <div class="footer-column">
@@ -164,6 +167,26 @@
             </div>
         </div>
     </footer>
+
+    <!-- NAVEGAÇÃO MOBILE FIXA -->
+    <nav class="mobile-nav">
+        <a href="#" class="mobile-nav-item active" aria-label="Início">
+            <i class="fas fa-home"></i>
+            <span>Início</span>
+        </a>
+        <a href="#" class="mobile-nav-item" aria-label="Favoritos">
+            <i class="fas fa-heart"></i>
+            <span>Favoritos</span>
+        </a>
+        <a href="#" class="mobile-nav-item" aria-label="Notificações">
+            <i class="fas fa-bell"></i>
+            <span>Notificações</span>
+        </a>
+        <a href="#" class="mobile-nav-item" aria-label="Configurações">
+            <i class="fas fa-cog"></i>
+            <span>Configurações</span>
+        </a>
+    </nav>
 
     <script src="js/script.js"></script>
 </body>

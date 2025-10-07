@@ -30,25 +30,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const searchInput = document.getElementById('search-input');
     const suggestionsContainer = document.getElementById('search-suggestions');
 
-    let debounceTimer;
-
-    // Lógica para expandir a busca
-    const searchContainer = document.querySelector('.search-container');
-    const searchButton = searchForm.querySelector('button');
-
-    searchButton.addEventListener('click', (e) => {
-        // Se a busca não estiver expandida, previne o envio do formulário e a expande.
-        if (!searchContainer.classList.contains('active')) {
-            e.preventDefault();
-            searchContainer.classList.add('active');
-            searchInput.focus(); // Foca no input
-        }
-    });
+    const searchContainer = document.querySelector('.search-container'); // Ainda necessário para as sugestões
+    let debounceTimer;    
 
     searchForm.addEventListener('submit', (e) => {
         e.preventDefault();
         const query = searchInput.value.trim();
-        if (query && searchContainer.classList.contains('active')) { // Só busca se o campo estiver visível
+        if (query) {
             // Busca pelo filme e carrega o primeiro resultado
             fetchAndProcess(`api.php?search=${query}`, (data) => {
                 if (data.results && data.results.length > 0) {
@@ -57,7 +45,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     searchInput.value = ''; // Limpa o campo após a busca
                     suggestionsContainer.style.transform = 'scaleY(0)'; // Esconde sugestões com animação
                     suggestionsContainer.style.opacity = '0';
-                    searchContainer.classList.remove('active'); // Recolhe a barra de busca
                 } else {
                     alert('Nenhum filme encontrado com esse nome.');
                 }
@@ -136,11 +123,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // Esconde as sugestões se clicar fora
     document.addEventListener('click', (e) => {
         const searchContainer = e.target.closest('.search-container');
+        const topSearchContainer = document.querySelector('.search-container');
         if (!searchContainer) {
             suggestionsContainer.style.transform = 'scaleY(0)';
             suggestionsContainer.style.opacity = '0';
-            document.querySelector('.search-container').classList.remove('suggestions-open');
-            document.querySelector('.search-container').classList.remove('active');
+            if (topSearchContainer) { // Verifica se o elemento existe antes de modificar
+                topSearchContainer.classList.remove('suggestions-open');
+            }
         }
     });
 
