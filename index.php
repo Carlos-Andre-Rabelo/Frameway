@@ -17,6 +17,9 @@
 
     <header class="main-header">
         <div class="container">
+            <button class="hamburger-btn" aria-label="Menu">
+                <i class="fas fa-bars"></i>
+            </button>
             <a href="/Frameway/" class="logo">FRAMEWAY</a>
             <nav class="main-nav">
                 <div class="search-container">

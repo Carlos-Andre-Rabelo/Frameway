@@ -70,11 +70,33 @@ main::before {
     align-items: center;
 }
 
+.hamburger-btn {
+    background: none;
+    border: none;
+    color: #333;
+    font-size: 22px;
+    cursor: pointer;
+    padding: 5px;
+    z-index: 1; /* Garante que fique clicável */
+}
+
 .logo {
     font-size: 24px;
     font-weight: 900;
     color: #333;
     text-decoration: none;
+    /* Centralização absoluta */
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.main-nav {
+    display: flex;
+    align-items: center;
+    /* Garante que a navegação ocupe o espaço restante */
+    flex-grow: 1;
+    justify-content: flex-end; /* Alinha o conteúdo (busca) à direita */
 }
 
 .search-container {
@@ -82,42 +104,87 @@ main::before {
 }
 
 .search-form {
-    display: flex;
-    align-items: center;
+    /* Agora o form é o container relativo para o botão absoluto */
+    position: relative;
 }
 
 .search-form input {
-    border: 1px solid #ccc;
-    padding: 8px 12px;
-    border-radius: 20px 0 0 20px;
+    width: 0;
+    padding: 8px 0;
+    border: 1px solid transparent;
+    border-radius: 20px;
+    background-color: transparent; /* Garante que o fundo seja transparente para o blur */
     outline: none;
     font-family: 'Lato', sans-serif;
     font-size: 14px;
+    /* Transição separada para o border-radius */
+    transition: width 0.4s ease, padding 0.4s ease, opacity 0.4s ease, background-color 0.4s ease, border-color 0.4s ease;
+    opacity: 0;
 }
 
 .search-form button {
-    background-color: #333;
-    color: #fff;
-    border: 1px solid #333;
-    padding: 8px 12px;
+    /* Estado inicial: apenas o ícone */
+    position: absolute; /* Posiciona o botão sobre o input */
+    top: 50%;
+    right: 5px; /* Posição inicial à direita */
+    transform: translateY(-50%);
+    background-color: transparent;
+    color: #333;
+    border: none;
+    padding: 5px; /* Pequeno padding para a área de clique */
     cursor: pointer;
-    border-radius: 0 20px 20px 0;
-    margin-left: -1px; /* Sobrepõe a borda do input */
-    font-size: 14px;
+    font-size: 20px;
+    /* Transição para todas as propriedades que mudam */
+    transition: all 0.4s ease;
+    z-index: 2; /* Garante que o botão fique sobre o input durante a transição */
+}
+
+/* Estilos quando a busca está ativa/expandida */
+.search-container.active .search-form input {
+    width: 180px;
+    /* Aumenta o padding direito para não sobrepor o texto com o ícone */
+    padding: 8px 40px 8px 12px;
+    border-color: #ccc;
+    /* Efeito de blur forte */
+    background-color: rgba(255, 255, 255, 0.5); /* Fundo semitransparente é essencial */
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px); /* Para compatibilidade com Safari */
+    opacity: 1;
+    border-radius: 20px; /* Borda totalmente arredondada */
+    transition-duration: 0.4s; /* Garante que a transição de volta seja suave */
+}
+
+/* Quando as sugestões estão abertas, os cantos inferiores do input ficam retos */
+.search-container.suggestions-open .search-form input {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    transition-duration: 0.1s; /* A mudança de borda é rápida */
 }
 
 .search-suggestions {
-    display: none; /* Começa escondido */
     position: absolute;
-    top: 100%; /* Logo abaixo do input */
+    top: 100%; /* Começa exatamente abaixo do container da busca */
     left: 0;
-    right: 0;
-    background-color: #fff;
-    border: 1px solid #ddd;
-    border-top: none;
+    width: 100%;
     z-index: 1000;
-    max-height: 300px;
+    
+    /* Estilos para combinar com o input */
+    background-color: rgba(255, 255, 255, 0.5);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid #ccc;
+    border-top: none; /* Remove a borda superior para se unir ao input */
+    border-radius: 0 0 20px 20px; /* Cantos inferiores arredondados */
+    
+    /* Animação de expansão */
+    transform-origin: top center;
+    transform: scaleY(0);
+    opacity: 0;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+
+    max-height: 260px;
     overflow-y: auto;
+    overflow-x: hidden;
 }
 
 .suggestion-item {
@@ -127,7 +194,7 @@ main::before {
     padding: 8px 10px;
     cursor: pointer;
     font-size: 14px;
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid rgba(204, 204, 204, 0.5); /* Borda mais sutil */
 }
 
 .suggestion-item img {
@@ -135,15 +202,17 @@ main::before {
     height: 60px;
     object-fit: cover;
     flex-shrink: 0; /* Impede que a imagem encolha */
+    border-radius: 4px; /* Adiciona cantos arredondados suaves */
     background-color: #eee; /* Cor de fundo para o caso da imagem não carregar */
 }
 
 .suggestion-item:last-child {
-    border-bottom: none;
+    border-bottom: none; /* Remove a borda do último item */
 }
 
 .suggestion-item:hover {
-    background-color: #f4f4f4;
+    /* Fica um pouco mais opaco, mas mantém o efeito de blur */
+    background-color: rgba(255, 255, 255, 0.7);
 }
 
 /* --- SEÇÃO HERO --- */
@@ -466,4 +535,21 @@ main::before {
 
 .footer-column ul li a:hover {
     color: #fff;
+}
+
+/* --- ESTILIZAÇÃO DA BARRA DE ROLAGEM DAS SUGESTÕES --- */
+.search-suggestions::-webkit-scrollbar, .search-suggestions-wrapper::-webkit-scrollbar {
+    width: 6px; /* Largura da barra */
+}
+
+.search-suggestions::-webkit-scrollbar-track {
+    background: transparent; /* Fundo da trilha transparente */
+    border-radius: 10px;
+}
+
+.search-suggestions::-webkit-scrollbar-thumb {
+    background-color: rgba(0, 0, 0, 0.3); /* Cor do "polegar" da barra */
+    border-radius: 10px; /* Cantos arredondados */
+    border: 2px solid transparent; /* Cria um padding visual */
+    background-clip: content-box;
 }
