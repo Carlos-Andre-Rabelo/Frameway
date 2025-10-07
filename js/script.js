@@ -1,4 +1,27 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // Lógica para o cabeçalho com efeito de scroll
+    const header = document.querySelector('.main-header');
+    const mainContent = document.querySelector('main'); // Alvo agora é o <main>
+
+    if (header || mainContent) {
+        window.addEventListener('scroll', () => {
+            const scrollY = window.scrollY;
+
+            // Efeito de blur no header
+            if (header) {
+                header.classList.toggle('scrolled', scrollY > 50);
+            }
+
+            // Efeito de blur gradual na imagem de fundo do <main>
+            if (mainContent) {
+                // Aumenta o blur até um máximo de 10px, baseado na rolagem
+                const blurAmount = Math.min(10, scrollY / 50).toFixed(2);
+                mainContent.style.setProperty('--bg-blur', `${blurAmount}px`);
+            }
+        });
+    }
+
+
     // Carrega um filme padrão na inicialização
     const movieId = 129; // ID padrão para "A Viagem de Chihiro"
     loadMovieData(movieId);
@@ -172,12 +195,12 @@ function fetchAndProcess(url, callback) {
 const imageBaseUrl = 'https://image.tmdb.org/t/p/';
 
 function updateMovieDetails(movie) {
-    const heroSection = document.querySelector('.hero-section');
+    const mainContent = document.querySelector('main');
 
-    if (heroSection && movie.backdrop_path) {
+    if (mainContent && movie.backdrop_path) {
         const backdropUrl = `${imageBaseUrl}original${movie.backdrop_path}`;
-        // Define a imagem de fundo para o hero
-        heroSection.style.backgroundImage = `url('${backdropUrl}')`;
+        // Define a variável CSS para a imagem de fundo no pseudo-elemento do <main>
+        mainContent.style.setProperty('--bg-image', `url('${backdropUrl}')`);
     }
 
     const movieTitle = document.getElementById('movie-title');
