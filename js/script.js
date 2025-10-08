@@ -147,6 +147,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Configura os botões do carrossel uma única vez
     setupCarouselButtons();
+
+    setupExpandableColumn();
 });
 
 function loadMovieData(movieId) {
@@ -591,4 +593,86 @@ function setupCarouselButtons() {
     carousel.addEventListener('mouseup', dragEnd);
     carousel.addEventListener('mouseleave', dragEnd); // Se o mouse sair da área do carrossel
     carousel.addEventListener('touchend', dragEnd);
+}
+
+function setupExpandableColumn() {
+    const rightColumn = document.querySelector('.right-column');
+    if (!rightColumn) return;
+
+    const actionIconsContainer = rightColumn.querySelector('.action-icons');
+    const innerContentContainer = rightColumn.querySelector('.expandable-content-inner');
+
+    if (!actionIconsContainer || !innerContentContainer) return;
+
+    let activeSection = null;
+
+    actionIconsContainer.addEventListener('click', (e) => {
+        const iconItem = e.target.closest('.icon-item');
+        if (!iconItem) return;
+
+        const sectionName = iconItem.dataset.section;
+
+        if (sectionName === activeSection) {
+            closeSection();
+        } else {
+            // Abre a nova seção (se outra estiver aberta, ela será substituída)
+            openSection(sectionName, iconItem);
+        }
+    });
+
+    function openSection(sectionName, iconElement) {
+        const isSwitching = activeSection !== null;
+
+        actionIconsContainer.querySelector('.icon-item.active')?.classList.remove('active');
+        iconElement.classList.add('active');
+        activeSection = sectionName;
+
+        const oldContentWrapper = innerContentContainer.querySelector('.expandable-content-inner-wrapper');
+
+        // Se estivermos trocando de seção, faz o fade-out primeiro
+        if (isSwitching && oldContentWrapper) {
+            oldContentWrapper.style.opacity = '0';
+
+            // Espera o fade-out terminar para trocar o conteúdo
+            setTimeout(() => {
+                updateContent(iconElement);
+            }, 200); // Duração da transição de opacidade do CSS
+        } else {
+            // Se for a primeira vez abrindo, apenas atualiza o conteúdo e expande
+            updateContent(iconElement, false); // Atualiza sem fade-in inicial
+            rightColumn.classList.add('content-expanded');
+        }
+    }
+
+    function updateContent(iconElement, fadeIn = true) {
+        // Cria o novo conteúdo
+        innerContentContainer.innerHTML = createContentHTML(iconElement);
+        const newContentWrapper = innerContentContainer.querySelector('.expandable-content-inner-wrapper');
+
+        if (fadeIn) {
+            // Para o fade-in, o elemento começa invisível
+            newContentWrapper.style.opacity = '0';
+            // Força o navegador a registrar a opacidade 0 antes de animar para 1
+            requestAnimationFrame(() => {
+                newContentWrapper.style.opacity = '1';
+            });
+        }
+    }
+
+    function closeSection() {
+        actionIconsContainer.querySelector('.icon-item.active')?.classList.remove('active');
+        rightColumn.classList.remove('content-expanded');
+        activeSection = null;
+        // Limpa o conteúdo ao fechar para não aparecer rapidamente na próxima abertura
+        setTimeout(() => { innerContentContainer.innerHTML = ''; }, 400);
+    }
+
+    function createContentHTML(iconElement) {
+        return `
+            <div class="expandable-content-inner-wrapper">
+                <h3>${iconElement.querySelector('span').textContent.toUpperCase()}</h3>
+                <p>Aqui virá o conteúdo detalhado sobre o ${iconElement.querySelector('span').textContent.toLowerCase()}.</p>
+            </div>
+        `;
+    }
 }

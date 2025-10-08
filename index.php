@@ -88,14 +88,21 @@
                     </div>
                     <div class="right-column">
                         <div class="action-icons">
-                            <div class="icon-item"><i class="fas fa-users"></i><span>Elenco</span></div>
-                            <div class="icon-item"><i class="fas fa-trophy"></i><span>Prêmios</span></div>
-                            <div class="icon-item"><i class="fas fa-images"></i><span>Galeria</span></div>
-                            <div class="icon-item"><i class="fas fa-quote-right"></i><span>Citações</span></div>
-                            <div class="icon-item"><i class="fas fa-info-circle"></i><span>Fatos</span></div>
+                            <div class="icon-item" data-section="cast"><i class="fas fa-users"></i><span>Elenco</span></div>
+                            <div class="icon-item" data-section="awards"><i class="fas fa-trophy"></i><span>Prêmios</span></div>
+                            <div class="icon-item" data-section="gallery"><i class="fas fa-images"></i><span>Galeria</span></div>
+                            <div class="icon-item" data-section="quotes"><i class="fas fa-quote-right"></i><span>Citações</span></div>
+                            <div class="icon-item" data-section="facts"><i class="fas fa-info-circle"></i><span>Fatos</span></div>
                         </div>
 
-                        <h2>TRAILER</h2>
+                        <!-- Container para o conteúdo que será expandido -->
+                        <div id="expandable-content" class="expandable-content">
+                            <div class="expandable-content-inner">
+                                <!-- O conteúdo dinâmico será inserido aqui -->
+                            </div>
+                        </div>
+
+                        <h2 id="trailer-title">TRAILER</h2>
                         <div id="trailer-container" class="trailer-container">
                             <!-- O trailer será inserido aqui pelo JavaScript -->
                         </div>

@@ -831,3 +831,70 @@ main.background-loading::before {
         display: flex;
     }
 }
+
+/* --- ESTILOS PARA A COLUNA EXPANSÍVEL (ANIMAÇÃO SUAVE) --- */
+
+/* O container do trailer e o título agora são um grid item */
+#trailer-title,
+.trailer-container {
+    /* Transição para opacidade e margem */
+    transition: opacity 0.3s ease-out, margin-top 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Container que usa grid para animar a altura */
+.expandable-content {
+    display: grid;
+    /* Começa com a linha de conteúdo tendo 0 de altura */
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Wrapper interno para o conteúdo, para evitar problemas com padding/margin na animação */
+.expandable-content-inner {
+    overflow: hidden;
+    position: relative; /* Essencial para o posicionamento absoluto dos filhos */
+    opacity: 0;
+    transition: opacity 0.2s ease-out;
+}
+
+/* --- ESTADO EXPANDIDO --- */
+
+/* Quando expandido, a linha do grid cresce para a altura do conteúdo (1fr) */
+.right-column.content-expanded .expandable-content {
+    grid-template-rows: 1fr;
+}
+
+/* O conteúdo interno aparece com um pequeno delay */
+.right-column.content-expanded .expandable-content-inner {
+    opacity: 1;
+    transition: opacity 0.3s ease-in 0.15s;
+}
+
+/* O trailer e seu título desaparecem */
+.right-column.content-expanded #trailer-title,
+.right-column.content-expanded .trailer-container {
+    opacity: 0;
+    margin-top: -20px; /* Puxa para cima para um colapso mais suave */
+    pointer-events: none; /* Impede cliques enquanto estiver invisível */
+    transition: opacity 0.2s ease-out, margin-top 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Estilos para o conteúdo que será inserido dinamicamente */
+.expandable-content-inner-wrapper {
+    transition: opacity 0.2s ease-in-out; /* Adiciona a transição de fade */
+    padding: 20px;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+}
+
+/* Estilo para o ícone ativo */
+.icon-item.active i {
+    border-color: #ed4b46;
+    background-color: #ed4b46;
+    color: #fff;
+}
+
+/* Adiciona transição suave para o estado normal do ícone também */
+.icon-item i {
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
