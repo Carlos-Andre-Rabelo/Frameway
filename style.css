@@ -685,8 +685,8 @@ main.background-loading::before {
 
     .search-form input {
         background-color: rgba(255, 255, 255, 0.35); /* Mais translúcido */
-        backdrop-filter: blur(30px);
-        -webkit-backdrop-filter: blur(12px); /* Mais blur */
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px); /* Mais blur */
         border-color: rgba(255, 255, 255, 0.4); /* Borda mais sutil para combinar */
         color: #fff; /* Cor do texto para branco para melhor contraste */
     }
@@ -723,6 +723,12 @@ main.background-loading::before {
     .movie-details {
         margin-top: 0; /* Remove a sobreposição */
         padding: 20px;
+    }
+
+    /* Remove o padding lateral do container dos detalhes do filme para ocupar a tela toda */
+    .movie-details-container {
+        padding-left: 0;
+        padding-right: 0;
     }
 
     .movie-header h1 {
@@ -781,6 +787,12 @@ main.background-loading::before {
     .trailer-container {
         max-width: 400px; /* Limita a largura máxima do trailer */
         margin: 0 auto; /* Centraliza o container do trailer */
+        width: 100%; /* Garante que o container tenha uma largura definida para o player funcionar */
+    }
+
+    /* Garante que o wrapper do player de vídeo ocupe a largura do seu container no mobile */
+    .trailer-container .video-player-wrapper {
+        width: 100%;
     }
 
     /* --- AJUSTES NO CARROSSEL --- */

@@ -39,7 +39,7 @@
         <section class="hero-section" style="background-image: url('');">
         </section>
 
-        <div class="container">
+        <div class="container movie-details-container">
             <section class="movie-details">
                 <div class="movie-header">
                     <h1><span id="movie-title" class="fade-target">CARREGANDO...</span> <span class="year fade-target" id="movie-year"></span></h1>

@@ -436,6 +436,17 @@ function setupCarouselButtons() {
 
     let isTransitioning = false;
     let currentIndex = 0;
+    
+    // Variáveis para a funcionalidade de arrastar (swipe)
+    let isDragging = false;
+    let startPos = 0;
+    let currentTranslate = 0;
+    let prevTranslate = 0;
+    let animationID = 0;
+    let velocity = 0;
+    let lastMoveTime = 0;
+    let lastMovePos = 0;
+
 
     carousel.addEventListener('transitionend', () => {
         isTransitioning = false;
@@ -495,4 +506,89 @@ function setupCarouselButtons() {
             carousel.style.transform = `translateX(-${currentIndex * cardWidth}px)`;
         });
     });
+
+    // --- LÓGICA DE ARRASTAR (SWIPE) PARA O CARROSSEL ---
+
+    const dragStart = (e) => {
+        if (isTransitioning || carousel.children.length <= 1) return;
+        isDragging = true;
+        // Usa pageX tanto para mouse quanto para touch
+        startPos = e.type.includes('mouse') ? e.pageX : e.touches[0].pageX;
+        lastMovePos = startPos;
+        lastMoveTime = performance.now();
+        velocity = 0;
+
+        // Pega a posição atual do transform e cancela qualquer animação em andamento
+        currentTranslate = getTranslateX();
+        carousel.style.transition = 'none';
+        cancelAnimationFrame(animationID);
+    };
+
+    const dragMove = (e) => {
+        if (!isDragging) return;
+        const currentPosition = e.type.includes('mouse') ? e.pageX : e.touches[0].pageX;
+        const diff = currentPosition - startPos;
+        const newTranslate = currentTranslate + diff;
+
+        // Cálculo de velocidade
+        const now = performance.now();
+        const elapsed = now - lastMoveTime;
+        if (elapsed > 10) { // Evita divisões por zero ou valores muito pequenos
+            const distance = currentPosition - lastMovePos;
+            velocity = distance / elapsed; // pixels por milissegundo
+            lastMoveTime = now;
+            lastMovePos = currentPosition;
+        }
+
+        setTranslateX(newTranslate);
+    };
+
+    const dragEnd = (e) => {
+        if (!isDragging) return;
+        isDragging = false;
+        cancelAnimationFrame(animationID);
+
+        const cardWidth = carousel.querySelector('.movie-card').offsetWidth + 20;
+        const currentPosition = getTranslateX();
+
+        // Fator de inércia: quanto maior, mais longe o carrossel vai
+        const momentumFactor = 120; 
+        const momentumDistance = velocity * momentumFactor;
+        let finalPosition = currentPosition + momentumDistance;
+
+        // Calcula o índice do card mais próximo da posição final
+        currentIndex = Math.round(-finalPosition / cardWidth);
+
+        // Garante que o índice não saia dos limites dos itens originais
+        const originalCardCount = carousel.querySelectorAll('.movie-card').length / 2;
+        currentIndex = Math.max(0, Math.min(currentIndex, originalCardCount));
+
+        // Define a posição final para ser exatamente no card calculado
+        finalPosition = -currentIndex * cardWidth;
+
+        // Aplica a transição com efeito de desaceleração
+        carousel.style.transition = 'transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1)';
+        setTranslateX(finalPosition);
+        isTransitioning = true; // Bloqueia interações durante a animação
+    };
+
+    function getTranslateX() {
+        const style = window.getComputedStyle(carousel);
+        const matrix = new DOMMatrix(style.transform);
+        return matrix.m41;
+    }
+
+    function setTranslateX(x) {
+        carousel.style.transform = `translateX(${x}px)`;
+    }
+
+    carousel.addEventListener('mousedown', dragStart);
+    carousel.addEventListener('touchstart', dragStart, { passive: true });
+
+    carousel.addEventListener('mousemove', dragMove);
+    carousel.addEventListener('touchmove', dragMove, { passive: true });
+
+    carousel.addEventListener('mouseup', dragEnd);
+    carousel.addEventListener('mouseleave', dragEnd); // Se o mouse sair da área do carrossel
+    carousel.addEventListener('touchend', dragEnd);
 }
