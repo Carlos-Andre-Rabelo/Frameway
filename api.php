@@ -44,6 +44,30 @@ if (isset($_GET['movie_id'])) {
         // REMOVIDO o $params. Pedimos TODOS os vídeos e filtramos no lado do cliente.
         $endpoint = $baseUrl . $movieId . '/videos' . "?api_key={$apiKey}";
     }
+} elseif (isset($_GET['download_image'])) {
+    $imagePath = $_GET['download_image'];
+
+    // Validação básica para segurança
+    if (!empty($imagePath) && strpos($imagePath, '..') === false) {
+        // O caminho da imagem já vem com a barra inicial, ex: /xyz.jpg
+        $imageUrl = 'https://image.tmdb.org/t/p/original' . $imagePath;
+
+        $ch = curl_init($imageUrl);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_HEADER, false);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+        $imageData = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        if ($httpCode == 200 && $imageData) {
+            // Determina o tipo de conteúdo (MIME type)
+            $finfo = new finfo(FILEINFO_MIME_TYPE);
+            header('Content-Type: ' . $finfo->buffer($imageData));
+            echo $imageData;
+            exit; // Termina o script após enviar a imagem
+        }
+    }
 }
 
 // Se um endpoint válido foi definido, faz a requisição

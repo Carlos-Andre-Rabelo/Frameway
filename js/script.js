@@ -1,6 +1,6 @@
 let currentMovieData = {
+    details: null,
     credits: null,
-    // Outros dados do filme podem ser armazenados aqui no futuro
     images: null,
 };
 
@@ -187,6 +187,7 @@ function loadMovieData(movieId) {
         });
 
         // Limpa os dados antigos antes de carregar novos
+        currentMovieData.details = null;
         currentMovieData.credits = null;
         currentMovieData.images = null;
 
@@ -225,6 +226,9 @@ const imageBaseUrl = 'https://image.tmdb.org/t/p/';
 
 function updateMovieDetails(movie, movieId) {
     const mainElement = document.querySelector('main');
+
+    // Armazena todos os detalhes do filme para uso posterior (Fatos, etc.)
+    currentMovieData.details = movie;
 
     // Pré-carrega a imagem de fundo para garantir que o fade-in seja suave
     if (mainElement && movie.backdrop_path) {
@@ -729,6 +733,19 @@ function setupExpandableColumn() {
         }
     });
 
+    // Adiciona o listener para abrir o lightbox (usando delegação de evento)
+    innerContentContainer.addEventListener('click', (e) => {
+        const galleryItem = e.target.closest('.gallery-item');
+        if (galleryItem) {
+            // Encontra todas as imagens visíveis no grid
+            const allImageElements = innerContentContainer.querySelectorAll('.gallery-item');
+            const allImages = Array.from(allImageElements).map(item => item.querySelector('img').src);
+            const clickedIndex = Array.from(allImageElements).indexOf(galleryItem);
+
+            openLightbox(allImages, clickedIndex);
+        }
+    });
+
     let activeSection = null;
 
     actionIconsContainer.addEventListener('click', (e) => {
@@ -804,6 +821,18 @@ function setupExpandableColumn() {
             contentHtml = createCastHtml(currentMovieData.credits.cast);
         }
 
+        if (sectionName === 'awards') {
+            contentHtml = createAwardsHtml();
+        }
+
+        if (sectionName === 'quotes') {
+            contentHtml = createQuotesHtml();
+        }
+
+        if (sectionName === 'facts' && currentMovieData.details) {
+            contentHtml = createFactsHtml(currentMovieData.details);
+        }
+
         if (sectionName === 'gallery' && currentMovieData.images) {
             // Cria um cabeçalho especial com filtros para a galeria
             headerHtml = `
@@ -850,6 +879,87 @@ function setupExpandableColumn() {
         return `<div class="cast-list">${castList}</div>`;
     }
 
+    function createAwardsHtml() {
+        // A API do TMDB não fornece dados de prêmios.
+        // Esta função cria um placeholder informativo com a estrutura visual correta.
+        const content = `
+            <div class="award-item">
+                <i class="fas fa-info-circle award-icon"></i>
+                <div class="award-info">
+                    <span class="award-category">Informação sobre Prêmios</span>
+                    <span class="award-details">Dados sobre prêmios não estão disponíveis na API do TMDB. A interface está pronta para ser integrada com uma fonte de dados futura.</span>
+                </div>
+            </div>
+        `;
+
+        return `<div class="awards-list">${content}</div>`;
+    }
+
+    function createQuotesHtml() {
+        // A API do TMDB não fornece dados de citações.
+        // Esta função cria um placeholder informativo.
+        const content = `
+            <div class="quote-item">
+                <i class="fas fa-comment-slash quote-icon"></i>
+                <div class="quote-info">
+                    <span class="quote-text">Nenhuma citação disponível.</span>
+                    <span class="quote-character">Dados sobre citações não são fornecidos pela API.</span>
+                </div>
+            </div>
+        `;
+        return `<div class="quotes-list">${content}</div>`;
+    }
+
+    function createFactsHtml(movie) {
+        // Função auxiliar para formatar nomes de países
+        const countryNames = new Intl.DisplayNames(['pt-BR'], { type: 'region' });
+
+        // O Slogan é especial e será tratado separadamente para ocupar a largura total
+        const slogan = movie.tagline ? `
+            <div class="fact-item slogan">
+                <i class="fas fa-bullhorn fact-icon"></i>
+                <div class="fact-info">
+                    <span class="fact-label">Slogan</span>
+                    <span class="fact-value">${movie.tagline}</span>
+                </div>
+            </div>` : '';
+
+        const facts = [
+            { label: 'Título Original', value: movie.original_title, icon: 'fa-film' },
+            { label: 'Status', value: movie.status === 'Released' ? 'Lançado' : movie.status, icon: 'fa-check-circle' },
+            { label: 'Idioma Original', value: new Intl.DisplayNames(['pt-BR'], { type: 'language' }).of(movie.original_language), icon: 'fa-language' },
+            { label: 'Orçamento', value: movie.budget > 0 ? `$${movie.budget.toLocaleString('en-US')}` : 'N/A', icon: 'fa-wallet' },
+            { label: 'Receita', value: movie.revenue > 0 ? `$${movie.revenue.toLocaleString('en-US')}` : 'N/A' },
+            { label: 'Total de Votos', value: movie.vote_count ? movie.vote_count.toLocaleString('en-US') : 'N/A', icon: 'fa-users' },
+            { label: 'Idiomas Falados', value: movie.spoken_languages.map(l => l.name).join(', '), icon: 'fa-comments' },
+            { label: 'Produtoras', value: movie.production_companies.map(c => c.name).join(', ') || 'N/A', icon: 'fa-building' },
+            { label: 'Países de Produção', value: movie.production_countries.map(c => countryNames.of(c.iso_3166_1)).join(', '), icon: 'fa-globe-americas' },
+            { label: 'Site Oficial', value: movie.homepage, icon: 'fa-link', isLink: true },
+            { label: 'Conteúdo Adulto', value: movie.adult ? 'Sim' : 'Não', icon: 'fa-exclamation-triangle' }
+        ];
+
+        const gridItems = facts.map(fact => {
+            if (!fact.value || fact.value.trim() === '') return ''; // Não renderiza fatos sem valor
+
+            // Define o ícone a ser usado
+            const iconClass = fact.icon || 'fa-info-circle';
+            // Formata o valor como um link se necessário
+            const factValueHtml = fact.isLink ? `<a href="${fact.value}" target="_blank" rel="noopener noreferrer">${fact.value}</a>` : fact.value;
+
+            return `
+                <div class="fact-item">
+                    <i class="fas ${iconClass} fact-icon"></i>
+                    <div class="fact-info">
+                        <span class="fact-label">${fact.label}</span>
+                        <span class="fact-value">${factValueHtml}</span>
+                    </div>
+                </div>`;
+        }).join('');
+
+        // Combina o slogan (se existir) com os outros itens do grid
+        return `<div class="facts-list">${slogan}${gridItems}</div>`;
+    }
+
     function createGalleryHtml(images) {
         if (!images || (images.backdrops.length === 0 && images.posters.length === 0)) {
             return '<p>Nenhuma imagem disponível na galeria.</p>';
@@ -870,11 +980,13 @@ function setupExpandableColumn() {
         }
 
         let gridHtml = imageList.slice(0, count).map(img => {
-            const imageUrl = `${imageBaseUrl}w500${img.file_path}`;
+            // Usa uma resolução maior para backdrops e uma adequada para pôsteres
+            const imageSize = filter === 'backdrops' ? 'w780' : 'w500';
+            const imageUrl = `${imageBaseUrl}${imageSize}${img.file_path}`;
             const aspectRatio = filter === 'posters' ? '2 / 3' : '16 / 9';
             return `
                 <div class="gallery-item" style="aspect-ratio: ${aspectRatio};">
-                    <img src="${imageUrl}" alt="Imagem da galeria" loading="lazy">
+                    <img src="${imageUrl}" alt="Imagem da galeria" loading="lazy" data-original-src="${imageBaseUrl}original${img.file_path}">
                 </div>`;
         }).join('');
 
@@ -884,5 +996,149 @@ function setupExpandableColumn() {
         }
 
         return gridHtml;
+    }
+}
+
+// --- LÓGICA DO LIGHTBOX ---
+
+let lightboxState = {
+    images: [],
+    currentIndex: -1,
+    isOpen: false
+};
+
+function openLightbox(images, index) {
+    if (lightboxState.isOpen) return;
+
+    lightboxState.images = images.map(imgSrc => {
+        // Extrai o caminho original da URL da thumbnail para construir a URL de alta resolução
+        const path = imgSrc.split('/').pop();
+        return `${imageBaseUrl}original/${path}`;
+    });
+    lightboxState.isOpen = true;
+
+    const lightboxHtml = `
+        <div class="lightbox-modal" id="lightbox-modal">
+            <div class="lightbox-controls top-left">
+                <button id="lightbox-download" class="lightbox-btn" title="Baixar imagem"><i class="fas fa-download"></i></button>
+            </div>
+            <div class="lightbox-controls top-right">
+                <button id="lightbox-close" class="lightbox-btn"><i class="fas fa-times"></i></button>
+            </div>
+            <button class="lightbox-arrow prev" id="lightbox-prev">&#10094;</button>
+            <img src="" id="lightbox-image" alt="Imagem em tela cheia">
+            <button class="lightbox-arrow next" id="lightbox-next">&#10095;</button>
+        </div>
+    `;
+
+    document.body.insertAdjacentHTML('beforeend', lightboxHtml);
+    document.body.classList.add('lightbox-open');
+
+    // Adiciona listeners
+    document.getElementById('lightbox-close').addEventListener('click', closeLightbox);
+    document.getElementById('lightbox-download').addEventListener('click', downloadCurrentImage);
+    document.getElementById('lightbox-prev').addEventListener('click', showPrevImage);
+    document.getElementById('lightbox-next').addEventListener('click', showNextImage);
+    document.getElementById('lightbox-modal').addEventListener('click', (e) => {
+        // Fecha se clicar no fundo, mas não na imagem ou nos botões
+        if (e.target.id === 'lightbox-modal') {
+            closeLightbox();
+        }
+    });
+    window.addEventListener('keydown', handleKeyboard);
+
+    showImage(index);
+}
+
+function showImage(index) {
+    if (index < 0 || index >= lightboxState.images.length) return;
+
+    lightboxState.currentIndex = index;
+    const imageElement = document.getElementById('lightbox-image');
+    const imageUrl = lightboxState.images[index];
+
+    // Mostra um spinner ou loading enquanto a imagem carrega (opcional)
+    imageElement.src = ''; // Limpa a imagem anterior
+    imageElement.src = imageUrl;
+}
+
+function showNextImage() {
+    let nextIndex = lightboxState.currentIndex + 1;
+    if (nextIndex >= lightboxState.images.length) {
+        nextIndex = 0; // Volta para o início
+    }
+    showImage(nextIndex);
+}
+
+function showPrevImage() {
+    let prevIndex = lightboxState.currentIndex - 1;
+    if (prevIndex < 0) {
+        prevIndex = lightboxState.images.length - 1; // Vai para o final
+    }
+    showImage(prevIndex);
+}
+
+function closeLightbox() {
+    const modal = document.getElementById('lightbox-modal');
+    if (modal) {
+        modal.remove();
+    }
+    document.body.classList.remove('lightbox-open');
+    window.removeEventListener('keydown', handleKeyboard);
+    lightboxState.isOpen = false;
+}
+
+async function downloadCurrentImage(e) {
+    e.preventDefault();
+    const button = e.currentTarget;
+    const icon = button.querySelector('i');
+    const originalIconClass = 'fas fa-download';
+    const loadingIconClass = 'fas fa-spinner fa-spin';
+
+    const fullImageUrl = lightboxState.images[lightboxState.currentIndex];
+    // Extrai apenas o caminho do arquivo, ex: /wA2cKnqT0maACr3aI3hWwRAnVam.jpg
+    const imagePath = new URL(fullImageUrl).pathname.replace('/t/p/original', '');
+    const imageName = imagePath.split('/').pop();
+
+    // A URL que vamos chamar para o download via nosso proxy
+    const downloadUrl = `api.php?download_image=${encodeURIComponent(imagePath)}`;
+
+    try {
+        // Mostra um feedback de carregamento no botão
+        icon.className = loadingIconClass;
+        button.disabled = true;
+        const response = await fetch(downloadUrl);
+        if (!response.ok) {
+            throw new Error(`Falha ao buscar a imagem: ${response.statusText}`);
+        }
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = imageName;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        a.remove();
+
+    } catch (error) {
+        console.error('Erro ao baixar a imagem:', error);
+        alert('Não foi possível baixar a imagem. Tente novamente.');
+    } finally {
+        // Restaura o botão ao estado original
+        icon.className = originalIconClass;
+        button.disabled = false;
+    }
+}
+
+function handleKeyboard(e) {
+    if (e.key === 'Escape') {
+        closeLightbox();
+    } else if (e.key === 'ArrowRight') {
+        showNextImage();
+    } else if (e.key === 'ArrowLeft') {
+        showPrevImage();
     }
 }

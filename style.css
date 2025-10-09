@@ -1,3 +1,8 @@
+/* Classe para impedir a rolagem do body quando o modal está aberto */
+body.lightbox-open {
+    overflow: hidden;
+}
+
 /* --- CONFIGURAÇÕES GERAIS E RESET --- */
 * {
     margin: 0;
@@ -1001,6 +1006,150 @@ main.background-loading::before {
 .cast-list::-webkit-scrollbar-thumb { background: #ccc; border-radius: 10px; }
 .cast-list::-webkit-scrollbar-thumb:hover { background: #aaa; }
 
+/* --- ESTILOS PARA A SEÇÃO DE CITAÇÕES --- */
+.quotes-list {
+    max-height: var(--expandable-content-max-height);
+    overflow-y: auto;
+    padding-right: 10px;
+    margin-right: -10px;
+}
+
+.quote-item {
+    display: flex;
+    align-items: flex-start; /* Alinha no topo para citações longas */
+    gap: 15px;
+    margin-bottom: 15px;
+    padding: 15px;
+    background-color: #f0f0f0;
+    border-left: 4px solid #ccc;
+    border-radius: 0 8px 8px 0;
+}
+
+.quote-icon {
+    font-size: 22px;
+    color: #aaa;
+    padding-top: 4px; /* Ajuste vertical */
+}
+
+.quote-info .quote-text {
+    display: block;
+    font-style: italic;
+    font-size: 15px;
+    margin-bottom: 8px;
+    line-height: 1.5;
+}
+
+.quote-info .quote-character {
+    font-size: 13px;
+    font-weight: 700;
+    color: #888;
+    text-transform: uppercase;
+}
+
+/* --- ESTILOS PARA A SEÇÃO DE FATOS --- */
+.facts-list {
+    display: grid;
+    /* Cria colunas responsivas: o máximo que couber com no mínimo 200px */
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+    max-height: var(--expandable-content-max-height);
+    overflow-y: auto;
+    padding: 5px; /* Pequeno padding interno */
+}
+
+.fact-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background-color: #f0f0f0;
+    border-radius: 8px;
+    /* Remove a borda inferior, cada item agora é um card */
+}
+
+/* Estilo especial para o Slogan */
+.fact-item.slogan {
+    grid-column: 1 / -1; /* Faz o item ocupar todas as colunas */
+    background-color: #e9e2f3; /* Cor de destaque suave */
+    border-left: 4px solid #8a63d2; /* Borda roxa */
+}
+
+.fact-item.slogan .fact-icon {
+    color: #8a63d2; /* Cor do ícone combinando com a borda */
+}
+
+
+.fact-item:last-child {
+    border-bottom: none;
+}
+
+.fact-icon {
+    font-size: 18px;
+    color: #ed4b46; /* Vermelho do tema */
+    width: 25px;
+    text-align: center;
+}
+
+.fact-info .fact-label {
+    display: block;
+    font-size: 12px;
+    color: #999;
+    font-weight: 700;
+}
+
+.fact-info .fact-value {
+    font-size: 14px;
+    color: #333;
+    word-break: break-word; /* Quebra palavras longas como URLs */
+}
+
+.fact-info .fact-value a {
+    color: #ed4b46;
+    text-decoration: none;
+}
+.fact-info .fact-value a:hover {
+    text-decoration: underline;
+}
+
+/* --- ESTILOS PARA A SEÇÃO DE PRÊMIOS --- */
+.awards-list {
+    /* Reutiliza a mesma altura e rolagem da lista de elenco */
+    max-height: var(--expandable-content-max-height);
+    overflow-y: auto;
+    padding-right: 10px;
+    margin-right: -10px;
+}
+
+.award-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 15px;
+    padding: 10px;
+    background-color: #f0f0f0;
+    border-radius: 8px;
+}
+
+.award-icon {
+    font-size: 24px;
+    color: #aaa;
+    width: 30px; /* Largura fixa para alinhamento */
+    text-align: center;
+}
+
+.award-info .award-category {
+    display: block;
+    font-weight: 700;
+    font-size: 15px;
+    margin-bottom: 2px;
+}
+
+.award-info .award-details {
+    font-size: 13px;
+    color: #666;
+    line-height: 1.4;
+}
+
 /* --- ESTILOS PARA A GALERIA --- */
 .gallery-container {
     max-height: var(--expandable-content-max-height); /* Reutiliza a mesma variável de altura */
@@ -1077,20 +1226,92 @@ main.background-loading::before {
     background-color: #e0e0e0;
     color: #333;
 }
-    grid-template-columns: repeat(2, 1fr);
-}
 
-.gallery-item img {
+/* --- ESTILOS PARA O LIGHTBOX (MODAL DE IMAGEM) --- */
+.lightbox-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
     width: 100%;
-    height: auto;
-    /* aspect-ratio é agora definido inline pelo JS */
-    object-fit: cover;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    z-index: 2000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    opacity: 0;
+    animation: fadeIn 0.3s forwards;
 }
 
-.gallery-item img:hover {
-    transform: scale(1.05);
-    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+@keyframes fadeIn {
+    to { opacity: 1; }
+}
+
+#lightbox-image {
+    max-width: 90vw;
+    max-height: 90vh;
+    object-fit: contain;
+    box-shadow: 0 0 30px rgba(0,0,0,0.5);
+}
+
+.lightbox-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: rgba(0, 0, 0, 0.4);
+    color: white;
+    border: none;
+    font-size: 30px;
+    padding: 15px;
+    cursor: pointer;
+    z-index: 2001;
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    line-height: 25px;
+    transition: background-color 0.2s;
+}
+
+.lightbox-arrow:hover {
+    background-color: rgba(0, 0, 0, 0.7);
+}
+
+.lightbox-arrow.prev { left: 20px; }
+.lightbox-arrow.next { right: 20px; }
+
+.lightbox-controls.top-right {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    z-index: 2001;
+    display: flex;
+    gap: 15px;
+}
+
+.lightbox-controls.top-left {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    z-index: 2001;
+}
+
+.lightbox-btn {
+    background: none;
+    border: none;
+    color: #fff;
+    font-size: 24px;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.lightbox-btn:hover {
+    transform: scale(1.2);
+}
+
+/* Classe para impedir a rolagem do body quando o modal está aberto */
+body.lightbox-open {
+    overflow: hidden;
 }
