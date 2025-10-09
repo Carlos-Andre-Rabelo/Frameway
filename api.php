@@ -7,7 +7,7 @@ header('Content-Type: application/json');
 
 $apiKey = TMDB_API_KEY;
 $baseUrl = 'https://api.themoviedb.org/3/movie/';
-$params = "?api_key={$apiKey}&language=en-US&include_image_language=en,null"; // Prioriza inglês
+$params = "?api_key={$apiKey}&language=pt-BR&include_image_language=pt-BR,null"; // Prioriza português
 
 $endpoint = '';
 $response = null;
