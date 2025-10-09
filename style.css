@@ -1,3 +1,48 @@
+/* --- ESTILOS DE CARREGAMENTO ESQUELETO (SKELETON) --- */
+@keyframes skeleton-loading {
+    0% {
+        background-position: -200px 0;
+    }
+    100% {
+        background-position: calc(200px + 100%) 0;
+    }
+}
+
+.skeleton {
+    background-color: #e2e2e2;
+    background-image: linear-gradient(90deg, #e2e2e2, #f5f5f5, #e2e2e2);
+    background-size: 200px 100%;
+    background-repeat: no-repeat;
+    border-radius: 4px;
+    display: inline-block;
+    line-height: 1;
+    width: 100%;
+    animation: skeleton-loading 1.5s ease-in-out infinite;
+    /* Esconde o texto real enquanto o skeleton está ativo */
+    color: transparent !important; 
+    user-select: none;
+}
+
+.skeleton-text {
+    height: 1em; /* Altura baseada no tamanho da fonte */
+    margin-bottom: 0.25em;
+}
+
+.skeleton-text-block {
+    height: 8em; /* Altura para um bloco de texto como a sinopse */
+}
+
+.skeleton-block {
+    height: 150px; /* Altura genérica para blocos como o trailer */
+    width: 100%;
+}
+
+/* Remove o efeito esqueleto quando os dados são carregados */
+.fade-target:not(.skeleton) {
+    animation: none;
+    background: none;
+}
+
 /* Classe para impedir a rolagem do body quando o modal está aberto */
 body.lightbox-open {
     overflow: hidden;
@@ -167,9 +212,9 @@ main.background-loading::before {
     padding: 8px 40px 8px 12px; /* Padding para texto e ícone */
     border: 1px solid #ccc;
     border-radius: 20px;
-    background-color: rgba(255, 255, 255, 0.5); /* Fundo semitransparente */
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    background-color: rgba(255, 255, 255, 0.3); /* Fundo semitransparente - MAIS TRANSPARENTE */
+    backdrop-filter: blur(10px); /* MENOS BLUR */
+    -webkit-backdrop-filter: blur(10px);
     outline: none;
     font-family: 'Lato', sans-serif;
     font-size: 14px;
@@ -212,9 +257,9 @@ main.background-loading::before {
     z-index: 1000;
     
     /* Estilos para combinar com o input */
-    background-color: rgba(255, 255, 255, 0.5);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    background-color: rgba(255, 255, 255, 0.3); /* Fundo semitransparente - MAIS TRANSPARENTE */
+    backdrop-filter: blur(10px); /* MENOS BLUR - CORRIGIDO PARA CONSISTÊNCIA */
+    -webkit-backdrop-filter: blur(10px); /* Mantido consistente */
     border: 1px solid #ccc;
     border-top: none; /* Remove a borda superior para se unir ao input */
     border-radius: 0 0 20px 20px; /* Cantos inferiores arredondados */
@@ -357,6 +402,11 @@ main.background-loading::before {
     border-bottom: 2px solid #eee;
 }
 
+.trailer-wrapper h2 {
+    font-size: 14px;
+    border-bottom: 2px solid #eee;
+}
+
 .left-column p {
     line-height: 1.6;
     /* Remove a limitação de altura para exibir a sinopse completa */
@@ -413,6 +463,11 @@ main.background-loading::before {
     display: flex;
     align-items: center; /* Centraliza verticalmente */
     justify-content: center; /* Centraliza horizontalmente também */
+    min-height: 150px; /* Garante uma altura mínima durante o carregamento */
+}
+
+.trailer-container .skeleton-block {
+    border-radius: 5px;
 }
 
 .trailer-link {
@@ -445,19 +500,25 @@ main.background-loading::before {
 }
 
 /* --- SEÇÃO DE CITAÇÃO --- */
+/* Agora posicionada sobre o fundo do filme */
 .quote-section {
-    padding: 40px 0;
+    padding: 80px 0; /* Mais espaço vertical */
     text-align: center;
+    color: #fff; /* Texto branco para contraste com o fundo escuro */
+    /* O background foi removido para que a citação fique diretamente sobre a imagem do filme */
+    text-shadow: 0 2px 10px rgba(0,0,0,0.7); /* Sombra no texto para destacar */
 }
 .quote-section p {
-    font-size: 24px;
+    font-size: 32px;
     font-style: italic;
-    color: #777;
+    font-weight: 700;
     margin-bottom: 10px;
 }
 .quote-section span {
     font-weight: 700;
-    color: #aaa;
+    color: #fff;
+    opacity: 0.8;
+    letter-spacing: 2px;
 }
 
 /* --- SEÇÃO DE FILMES RELACIONADOS --- */
@@ -529,6 +590,10 @@ main.background-loading::before {
 .movie-card p {
     font-weight: 700;
     font-size: 14px;
+}
+
+.movie-card.skeleton {
+    background: none; /* Remove o fundo do skeleton do card em si */
 }
 
 /* --- RODAPÉ --- */
@@ -694,24 +759,20 @@ main.background-loading::before {
     }
 
     .logo {
-        display: none; /* Esconde o título do site na versão mobile */
+        display: none;
     }
 
+    /* No mobile, a barra de pesquisa usa os mesmos estilos da versão desktop,
+       apenas com a cor do texto e da borda ajustadas para o fundo escuro. */
     .search-form input {
-        background-color: rgba(255, 255, 255, 0.35); /* Mais translúcido */
-        backdrop-filter: blur(15px);
-        -webkit-backdrop-filter: blur(15px); /* Mais blur */
-        border-color: rgba(255, 255, 255, 0.4); /* Borda mais sutil para combinar */
-        color: #fff; /* Cor do texto para branco para melhor contraste */
+        color: #fff; /* Cor do texto branca para contraste */
+        border-color: rgba(255, 255, 255, 0.4); /* Borda mais sutil */
     }
+    /* O .search-suggestions herdará os estilos da versão desktop, funcionando corretamente. */
 
     .main-header.scrolled {
         background-color: transparent;
         box-shadow: none;
-    }
-
-    .main-header.scrolled .logo {
-        color: #222; /* Cor quando o header tem fundo branco */
     }
 
     /* --- AJUSTES NO BACKDROP E HERO --- */
@@ -834,6 +895,14 @@ main.background-loading::before {
     .social-icons {
         justify-content: center;
         display: flex;
+    }
+
+    .quote-section {
+        padding: 60px 0;
+    }
+
+    .quote-section p {
+        font-size: 24px;
     }
 
     .footer-column ul {
@@ -1065,17 +1134,6 @@ main.background-loading::before {
     background-color: #f0f0f0;
     border-radius: 8px;
     /* Remove a borda inferior, cada item agora é um card */
-}
-
-/* Estilo especial para o Slogan */
-.fact-item.slogan {
-    grid-column: 1 / -1; /* Faz o item ocupar todas as colunas */
-    background-color: #e9e2f3; /* Cor de destaque suave */
-    border-left: 4px solid #8a63d2; /* Borda roxa */
-}
-
-.fact-item.slogan .fact-icon {
-    color: #8a63d2; /* Cor do ícone combinando com a borda */
 }
 
 

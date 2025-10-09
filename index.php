@@ -42,49 +42,47 @@
         <div class="container movie-details-container">
             <section class="movie-details">
                 <div class="movie-header">
-                    <h1><span id="movie-title" class="fade-target">CARREGANDO...</span> <span class="year fade-target" id="movie-year"></span></h1>
-                    <p class="genres fade-target" id="movie-genres"></p>
-                    <div class="rating-stars fade-target">
-                        <!-- A lógica das estrelas pode ser implementada depois com JS -->
-                        <i class="fas fa-star"></i>
-                        <i class="fas fa-star"></i>
-                        <i class="fas fa-star"></i>
-                        <i class="fas fa-star"></i>
-                        <i class="far fa-star"></i>
+                    <h1>
+                        <span id="movie-title" class="fade-target skeleton skeleton-text"></span> 
+                        <span class="year fade-target skeleton skeleton-text" id="movie-year"></span>
+                    </h1>
+                    <p class="genres fade-target skeleton skeleton-text" id="movie-genres"></p>
+                    <div class="rating-stars fade-target skeleton skeleton-text">
+                        <!-- Estrelas serão geradas pelo JS -->
                     </div>
                 </div>
 
                 <div class="movie-stats">
                     <div class="stat">
                         <span class="stat-label">AVALIAÇÃO</span>
-                        <span class="stat-value fade-target" id="stat-rating">N/A</span>
+                        <span class="stat-value fade-target skeleton skeleton-text" id="stat-rating"></span>
                     </div>
                     <div class="stat">
                         <span class="stat-label">DURAÇÃO</span>
-                        <span class="stat-value fade-target" id="stat-runtime">N/A</span>
+                        <span class="stat-value fade-target skeleton skeleton-text" id="stat-runtime"></span>
                     </div>
                     <div class="stat">
                         <span class="stat-label">ORÇAMENTO</span>
-                        <span class="stat-value fade-target" id="stat-budget">N/A</span>
+                        <span class="stat-value fade-target skeleton skeleton-text" id="stat-budget"></span>
                     </div>
                     <div class="stat">
                         <span class="stat-label">LANÇAMENTO</span>
-                        <span class="stat-value fade-target" id="stat-release">N/A</span>
+                        <span class="stat-value fade-target skeleton skeleton-text" id="stat-release"></span>
                     </div>
                 </div>
 
                 <div class="movie-content">
                     <div class="left-column">
                         <div class="poster-info-wrapper">
-                            <img src="" alt="Pôster do Filme" class="movie-poster" id="movie-poster">
+                            <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="Pôster do Filme" class="movie-poster skeleton" id="movie-poster">
                             <div class="director-info">
-                                <p><strong>DIRETOR</strong><br><span id="director-name" class="fade-target">Carregando...</span></p>
-                                <p><strong>ROTEIRISTA</strong><br><span id="writer-name" class="fade-target">Carregando...</span></p>
-                                <p><strong>ELENCO</strong><br><span id="stars-names" class="fade-target">Carregando...</span></p>
+                                <p><strong>DIRETOR</strong><br><span id="director-name" class="fade-target skeleton skeleton-text"></span></p>
+                                <p><strong>ROTEIRISTA</strong><br><span id="writer-name" class="fade-target skeleton skeleton-text"></span></p>
+                                <p><strong>ELENCO</strong><br><span id="stars-names" class="fade-target skeleton skeleton-text"></span></p>
                             </div>
                         </div>
                         <h2>SINOPSE</h2>
-                        <p id="movie-plot" class="fade-target">Carregando descrição...</p>
+                        <p id="movie-plot" class="fade-target skeleton skeleton-text-block"></p>
                     </div>
                     <div class="right-column">
                         <div class="action-icons">
@@ -105,7 +103,7 @@
                         <div class="trailer-wrapper">
                             <h2 id="trailer-title">TRAILER</h2>
                             <div id="trailer-container" class="trailer-container">
-                                <!-- O trailer será inserido aqui pelo JavaScript -->
+                                <div class="skeleton skeleton-block"></div>
                             </div>
                         </div>
                     </div>
@@ -114,10 +112,9 @@
         </div>
 
         <section class="quote-section">
-             <!-- Esta seção pode ser preenchida dinamicamente ou removida se não for usada -->
             <div class="container">
-                <p>"Once you do something, you never forget. Even if you can't remember."</p>
-                <span>ZENIBA</span>
+                <p id="quote-text" class="skeleton skeleton-text"></p>
+                <span id="quote-author" class="skeleton skeleton-text"></span>
             </div>
         </section>
     </main>
@@ -129,8 +126,7 @@
             <div class="carousel-wrapper">
                 <button id="prev-btn" class="carousel-arrow prev" aria-label="Anterior">&#10094;</button>
                 <div class="carousel">
-                    <!-- O conteúdo será preenchido pelo script.js -->
-                    <p style="text-align: center; width: 100%;">Carregando filmes relacionados...</p>
+                    <!-- O conteúdo esqueleto será preenchido pelo script.js -->
                 </div>
                 <button id="next-btn" class="carousel-arrow next" aria-label="Próximo">&#10095;</button>
             </div>

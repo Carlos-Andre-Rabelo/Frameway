@@ -27,6 +27,19 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Listener para o botão "voltar" do navegador
+    window.addEventListener('popstate', (event) => {
+        // Se o estado tiver um movieId, carrega esse filme.
+        // O 'event.state' pode ser nulo se o usuário voltou para o estado inicial da página.
+        if (event.state && event.state.movieId) {
+            // Passamos 'false' para não adicionar um novo estado ao histórico
+            loadMovieData(event.state.movieId, false);
+        } else {
+            // Se não houver estado, podemos carregar o filme padrão ou o primeiro da URL
+            const initialMovieId = 129; // ID de "A Viagem de Chihiro"
+            loadMovieData(initialMovieId, false);
+        }
+    });
 
     // Carrega um filme padrão na inicialização
     const movieId = 129; // ID padrão para "A Viagem de Chihiro"
@@ -38,13 +51,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const searchContainer = document.querySelector('.search-container'); // Ainda necessário para as sugestões
     let debounceTimer;    
+    let searchAbortController = new AbortController(); // Controlador para cancelar buscas
 
     searchForm.addEventListener('submit', (e) => {
         e.preventDefault();
         const query = searchInput.value.trim();
         if (query) {
             // Busca pelo filme e carrega o primeiro resultado
-            fetchAndProcess(`api.php?search=${query}`, (data) => {
+            fetchAndProcess(`api.php?search=${query}`).then((data) => {
                 if (data.results && data.results.length > 0) {
                     const firstMovieId = data.results[0].id;
                     loadMovieData(firstMovieId);
@@ -61,6 +75,9 @@ document.addEventListener('DOMContentLoaded', () => {
     searchInput.addEventListener('input', () => {
         const query = searchInput.value.trim();
         clearTimeout(debounceTimer);
+        // Cancela a busca anterior antes de iniciar uma nova
+        searchAbortController.abort();
+        searchAbortController = new AbortController();
 
         if (query.length < 3) {
             suggestionsContainer.style.transform = 'scaleY(0)';
@@ -70,7 +87,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         debounceTimer = setTimeout(() => {
-            fetchAndProcess(`api.php?search=${query}`, (data) => {
+            fetchAndProcess(`api.php?search=${query}`, searchAbortController.signal).then((data) => {
                 // Limpa o container e cria o wrapper se ele não existir
                 suggestionsContainer.innerHTML = ''; 
 
@@ -110,7 +127,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     suggestionsContainer.style.opacity = '0';
                     searchContainer.classList.remove('suggestions-open');
                 }
-            });
+            }).catch(error => {
+                // Ignora erros de aborto, que são esperados
+                if (error.name !== 'AbortError') console.error("Erro na busca por sugestões:", error);
+            });;
         }, 300); // Espera 300ms após o usuário parar de digitar
     });
 
@@ -157,105 +177,194 @@ document.addEventListener('DOMContentLoaded', () => {
     setupExpandableColumn();
 });
 
-function loadMovieData(movieId) {
+function setSkeletonState(isLoading, scope = document) {
+    const elements = scope.querySelectorAll('.skeleton');
+    const relatedCarousel = document.querySelector('.related-movies .carousel');
+
+    if (isLoading) {
+        // Limpa e preenche o carrossel com esqueletos para o estado de carregamento
+        if (relatedCarousel) {
+            relatedCarousel.innerHTML = ''; // Limpa conteúdo antigo
+            for (let i = 0; i < 10; i++) {
+                relatedCarousel.innerHTML += `
+                    <div class="movie-card skeleton">
+                        <div class="skeleton skeleton-block" style="width: 150px; height: 225px; margin-bottom: 10px; border-radius: 7px;"></div>
+                        <div class="skeleton skeleton-text" style="height: 2em; width: 80%; margin: 0 auto;"></div>
+                    </div>
+                `;
+            }
+        }
+    } else {
+        // Remove as classes de esqueleto apenas dos elementos no escopo fornecido
+        elements.forEach(el => el.classList.remove('skeleton', 'skeleton-text', 'skeleton-text-block', 'skeleton-block'));
+    }
+}
+
+// --- GERENCIADOR DA BARRA DE CARREGAMENTO ---
+const loadingBarManager = {
+    progress: 0,
+    bar: document.getElementById('loading-bar'),
+    
+    reset() {
+        this.progress = 0;
+        if (!this.bar) return;
+        this.bar.classList.add('inactive');
+        void this.bar.offsetHeight; // Força reflow
+        this.bar.classList.remove('inactive');
+        this.update(10); // Começa com um progresso inicial pequeno
+    },
+
+    // Adiciona um valor ao progresso atual
+    advance(value) {
+        this.progress = Math.min(100, this.progress + value);
+        this.update(this.progress);
+    },
+
+    // Atualiza a largura da barra
+    update(value) {
+        if (this.bar) this.bar.style.width = `${value}%`;
+        if (value === 100) setTimeout(() => this.bar.classList.add('inactive'), 500);
+    }
+};
+
+let closeActiveSection = () => {}; // Placeholder para a função que fecha a seção expansível
+
+function loadMovieData(movieId, addToHistory = true) {
     const loadingBar = document.getElementById('loading-bar');
     const mainElement = document.querySelector('main');
-
-    // 1. Inicia o carregamento: reseta e exibe a barra, inicia o fade-out
-    if (loadingBar) {
-        loadingBar.classList.add('inactive'); // Reseta para 0% sem animação
-        // Força o navegador a aplicar a classe 'inactive' antes de remover
-        loadingBar.offsetHeight; 
-        loadingBar.classList.remove('inactive');
-        loadingBar.style.width = '70%'; // Anima a barra até 70%
-    }
-
-    // 1. Seleciona todos os elementos de conteúdo e os torna invisíveis (fade-out)
     const fadeTargets = document.querySelectorAll('.fade-target');
-    fadeTargets.forEach(el => {
-        el.style.opacity = '0';
+    
+    // **CORREÇÃO**: Fecha qualquer seção aberta (galeria, elenco, etc.) e reseta os ícones
+    closeActiveSection();
+    // **CORREÇÃO**: Reseta os dados de imagem para evitar que a galeria antiga apareça
+    currentMovieData.images = null;
+
+    // 1. Inicia o carregamento: reseta a UI para o estado de esqueleto
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    loadingBarManager.reset(); // Reseta e inicia a barra de carregamento
+
+    // Reseta a imagem do pôster e o fundo
+    const moviePoster = document.getElementById('movie-poster');
+    if (moviePoster) {
+        moviePoster.src = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"; // Imagem transparente
+    }
+    if (mainElement) mainElement.classList.add('background-loading');
+
+    // Mostra todos os esqueletos
+    document.querySelectorAll('.fade-target, .movie-poster, #trailer-container > div').forEach(el => el.classList.add('skeleton'));
+    document.getElementById('movie-plot').classList.add('skeleton-text-block');
+    setSkeletonState(true); // Preenche o carrossel com esqueletos
+
+    // Atualiza a URL e o histórico do navegador
+    const url = `?movie=${movieId}`;
+    if (addToHistory) history.pushState({ movieId: movieId }, '', url);
+
+    // **OTIMIZAÇÃO**: Busca os detalhes do filme UMA VEZ e reutiliza a promessa.
+    const detailsPromise = fetchAndProcess(`api.php?movie_id=${movieId}`);
+
+    // Pré-carrega a imagem de fundo usando a promessa de detalhes.
+    const backdropPromise = detailsPromise.then(details => {
+        loadingBarManager.advance(25); // Peso da imagem de fundo
+        if (details && details.backdrop_path) {
+            return new Promise(resolve => {
+                const backdropUrl = `${imageBaseUrl}original${details.backdrop_path}`;
+                const img = new Image();
+                img.src = backdropUrl;
+                img.onload = () => resolve(backdropUrl);
+                img.onerror = () => resolve(null); // Resolve mesmo em caso de erro
+            });
+        }
+        return Promise.resolve(null);
     });
 
-    if (mainElement) mainElement.classList.add('background-loading'); // Inicia o fade-out do fundo
+    // 2. **CARREGAMENTO PROGRESSIVO**
+    // Etapa 1: Busca dos dados CRÍTICOS (detalhes e créditos)
+    Promise.all([detailsPromise, fetchAndProcess(`api.php?credits_for=${movieId}`)])
+    .then(async ([details, credits]) => {
+        // **BARRA PRECISA**: Dados críticos carregados (+40%)
+        loadingBarManager.advance(40);
+        // Assim que os dados críticos chegam, atualiza a UI principal
+        currentMovieData.details = details;
+        currentMovieData.credits = credits;
 
-    // 2. Espera a animação de fade-out terminar para então carregar os novos dados
-    setTimeout(() => { // O tempo deve ser igual ou maior que a transição no CSS
-        // Rola a página para o topo suavemente
-        window.scrollTo({
-            top: 0,
-            behavior: 'smooth'
-        });
+        const backdropUrl = await backdropPromise; // Espera a imagem de fundo terminar de carregar
+        updateMovieDetails(details, backdropUrl);
+        updateMovieCredits(credits);
+        updateQuoteSection(details);
 
-        // Limpa os dados antigos antes de carregar novos
-        currentMovieData.details = null;
-        currentMovieData.credits = null;
-        currentMovieData.images = null;
+    }).catch(error => {
+        console.error("Falha ao carregar dados do filme:", error);
+        if (loadingBar) loadingBar.classList.add('inactive');
+        // Adicionar tratamento de erro para o usuário aqui
+    });
 
-        fetchAndProcess(`api.php?movie_id=${movieId}`, (movie) => updateMovieDetails(movie, movieId));
-        fetchAndProcess(`api.php?credits_for=${movieId}`, updateMovieCredits);
-        fetchAndProcess(`api.php?related_to=${movieId}`, updateRelatedMovies);
-    }, 300); 
+    // Etapa 2: Busca dos dados SECUNDÁRIOS em paralelo
+    const relatedPromise = fetchAndProcess(`api.php?related_to=${movieId}`);
+    const videosPromise = fetchAndProcess(`api.php?videos_for=${movieId}`);
+    // **REVERSÃO**: A busca de imagens volta a ser feita no carregamento inicial
+    const imagesPromise = fetchAndProcess(`api.php?images_for=${movieId}`);
+
+    // Atualiza cada seção secundária assim que seus dados chegam
+    Promise.all([videosPromise, imagesPromise]).then(([videos, images]) => {
+        // **BARRA PRECISA**: Dados do trailer e galeria carregados (+20%)
+        loadingBarManager.advance(20);
+        currentMovieData.videos = videos;
+        currentMovieData.images = images; // Armazena os dados da galeria
+        updateMovieTrailer(videos, images);
+    });
+
+    relatedPromise.then(related => {
+        currentMovieData.related = related;
+        updateRelatedMovies(related);
+    });
 }
 
 /**
  * Função auxiliar para fazer requisições fetch e processar a resposta.
+ * Retorna uma Promise.
  * @param {string} url - A URL para a requisição.
- * @param {function} callback - A função a ser chamada com os dados bem-sucedidos.
+ * @param {AbortSignal} [signal] - Um AbortSignal para cancelar a requisição.
  */
-function fetchAndProcess(url, callback) {
-    fetch(url)
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status} for URL: ${url}`);
-            }
-            return response.json();
-        })
-        .then(data => {
-            if (data.error) {
-                console.error(`Erro da API em ${url}:`, data.error);
-                return;
-            }
-            callback(data);
-        })
-        .catch(error => {
-            console.error('Houve um problema com a requisição fetch:', error);
-        });
+function fetchAndProcess(url, signal) {
+    return new Promise((resolve, reject) => {
+        fetch(url, { signal })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status} for URL: ${url}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.error) {
+                    console.error(`Erro da API em ${url}:`, data.error);
+                    reject(data.error);
+                } else {
+                    resolve(data);
+                }
+            })
+            .catch(error => {
+                console.error('Houve um problema com a requisição fetch:', error);
+                reject(error);
+            });
+    });
 }
 
 const imageBaseUrl = 'https://image.tmdb.org/t/p/';
 
-function updateMovieDetails(movie, movieId) {
+function updateMovieDetails(movie, backdropUrl) {
     const mainElement = document.querySelector('main');
 
-    // Armazena todos os detalhes do filme para uso posterior (Fatos, etc.)
-    currentMovieData.details = movie;
-
-    // Pré-carrega a imagem de fundo para garantir que o fade-in seja suave
-    if (mainElement && movie.backdrop_path) {
-        const backdropUrl = `${imageBaseUrl}original${movie.backdrop_path}`;
-        const img = new Image();
-        img.src = backdropUrl;
-        img.onload = () => {
-            // 1. Define a nova imagem de fundo
+    // **OTIMIZAÇÃO**: A imagem de fundo já foi pré-carregada. Apenas a aplicamos.
+    if (mainElement) {
+        if (backdropUrl) {
             mainElement.style.setProperty('--bg-image', `url('${backdropUrl}')`);
-            // 2. Remove a classe de carregamento para iniciar o fade-in
-            mainElement.classList.remove('background-loading');
-        };
-        img.onerror = () => {
-            // Caso a imagem falhe, remove a classe mesmo assim para não travar a UI
-            mainElement.classList.remove('background-loading');
-            console.error("Falha ao carregar a imagem de fundo:", backdropUrl);
-        };
-    } else if (mainElement) {
+        } else {
+            // Se não houver imagem, limpa a propriedade
+            mainElement.style.setProperty('--bg-image', 'none');
+        }
         // Se não houver imagem, remove a classe de carregamento imediatamente
         mainElement.classList.remove('background-loading');
-    }
-
-    // Completa a barra de carregamento e a esconde
-    const loadingBar = document.getElementById('loading-bar');
-    if (loadingBar) {
-        loadingBar.style.width = '100%';
-        setTimeout(() => loadingBar.classList.add('inactive'), 500); // Esconde após completar
     }
 
     const movieTitle = document.getElementById('movie-title');
@@ -263,48 +372,60 @@ function updateMovieDetails(movie, movieId) {
     const movieGenres = document.getElementById('movie-genres');
     const ratingStarsContainer = document.querySelector('.rating-stars');
 
-    if (movieTitle) movieTitle.textContent = movie.title.toUpperCase();
-    if (movieYear) movieYear.textContent = `(${new Date(movie.release_date).getFullYear()})`;
-    if (movieGenres) movieGenres.textContent = movie.genres.map(g => g.name).join(' | ');
-
-    document.getElementById('stat-rating').textContent = movie.vote_average.toFixed(1);
-    document.getElementById('stat-runtime').textContent = `${movie.runtime} mins`;
-    document.getElementById('stat-budget').textContent = movie.budget > 0 ? `$${movie.budget.toLocaleString('en-US')}` : 'N/A';
-    document.getElementById('stat-release').textContent = new Date(movie.release_date).toLocaleDateString('pt-BR', {
-        day: '2-digit', month: 'long', year: 'numeric'
-    }).toUpperCase();
-
-    if (ratingStarsContainer && movie.vote_average) {
-        ratingStarsContainer.innerHTML = generateStarRating(movie.vote_average);
-    }
-
+    const statRating = document.getElementById('stat-rating');
+    const statRuntime = document.getElementById('stat-runtime');
+    const statBudget = document.getElementById('stat-budget');
+    const statRelease = document.getElementById('stat-release');
     const moviePoster = document.getElementById('movie-poster');
     const moviePlot = document.getElementById('movie-plot');
 
-    if (moviePoster && movie.poster_path) {
-        moviePoster.src = `${imageBaseUrl}w500${movie.poster_path}`;
-        moviePoster.alt = `${movie.title} Poster`;
-    }
-    if (moviePlot) moviePlot.textContent = movie.overview;
+    // **OTIMIZAÇÃO**: Agrupa todas as atualizações do DOM em um único requestAnimationFrame
+    // para evitar múltiplos reflows/repaints.
+    requestAnimationFrame(() => {
+        // --- ATUALIZAÇÕES DE TEXTO E CONTEÚDO ---
+        movieTitle.textContent = movie.title.toUpperCase();
+        movieYear.textContent = `(${new Date(movie.release_date).getFullYear()})`;
+        movieGenres.textContent = movie.genres.map(g => g.name).join(' | ');
+        ratingStarsContainer.innerHTML = generateStarRating(movie.vote_average);
+        
+        statRating.textContent = movie.vote_average.toFixed(1);
+        statRuntime.textContent = `${movie.runtime} mins`;
+        statBudget.textContent = movie.budget > 0 ? `$${movie.budget.toLocaleString('en-US')}` : 'N/A';
+        statRelease.textContent = new Date(movie.release_date).toLocaleDateString('pt-BR', {
+            day: '2-digit', month: 'long', year: 'numeric'
+        }).toUpperCase();
 
-    // 3. Torna os elementos visíveis novamente para iniciar o fade-in
-    const fadeTargets = document.querySelectorAll('.fade-target');
-    // Usar um pequeno timeout garante que o navegador processe as atualizações de conteúdo antes de iniciar a animação
-    setTimeout(() => {
-        fadeTargets.forEach(el => el.style.opacity = '1');
-    }, 50);
+        moviePlot.textContent = movie.overview;
 
-    // AGORA, com os detalhes do filme carregados, buscamos o trailer
-    // Usamos Promise.all para buscar vídeos e imagens simultaneamente
-    Promise.all([
-        fetch(`api.php?videos_for=${movieId}`).then(res => res.json()),
-        fetch(`api.php?images_for=${movieId}`).then(res => res.json())
-    ]).then(([videos, images]) => {
-        currentMovieData.images = images; // Armazena as imagens para uso posterior (galeria)
-        updateMovieTrailer(videos, images);
-    }).catch(error => {
-        console.error("Falha ao buscar dados do trailer ou imagens:", error);
+        // --- ATUALIZAÇÃO DE IMAGEM ---
+        if (moviePoster && movie.poster_path) {
+            moviePoster.src = `${imageBaseUrl}w500${movie.poster_path}`;
+            moviePoster.alt = `${movie.title} Poster`;
+        }
+
+        // --- REMOÇÃO DAS CLASSES SKELETON (Tudo de uma vez) ---
+        [movieTitle, movieYear, movieGenres, ratingStarsContainer, statRating, statRuntime, statBudget, statRelease].forEach(el => {
+            el.classList.remove('skeleton', 'skeleton-text');
+        });
+        moviePlot.classList.remove('skeleton', 'skeleton-text-block');
+        if (moviePoster) moviePoster.classList.remove('skeleton');
     });
+
+}
+
+function updateQuoteSection(movie) {
+    const quoteText = document.getElementById('quote-text');
+    const quoteAuthor = document.getElementById('quote-author');
+
+    if (movie.tagline) {
+        quoteText.textContent = `"${movie.tagline}"`;
+        quoteAuthor.textContent = movie.title.toUpperCase();
+    } else {
+        quoteText.textContent = "Uma experiência cinematográfica inesquecível.";
+        quoteAuthor.textContent = "FRAMEWAY";
+    }
+    quoteText.classList.remove('skeleton', 'skeleton-text');
+    quoteAuthor.classList.remove('skeleton', 'skeleton-text');
 }
 
 /**
@@ -338,9 +459,6 @@ function generateStarRating(rating) {
 }
 
 function updateMovieCredits(credits) {
-    // Armazena todos os créditos para uso posterior (ex: na seção de elenco)
-    currentMovieData.credits = credits;
-
     const director = credits.crew.find(person => person.job === 'Director');
     const writer = credits.crew.find(person => person.department === 'Writing'); // Pega o primeiro roteirista
     const stars = credits.cast.slice(0, 3).map(person => person.name).join(', ');
@@ -349,10 +467,9 @@ function updateMovieCredits(credits) {
     document.getElementById('writer-name').textContent = writer ? writer.name : 'Não disponível';
     document.getElementById('stars-names').textContent = stars || 'Não disponível';
 
-    // Garante que os créditos também apareçam com o fade-in
-    document.querySelectorAll('#director-name, #writer-name, #stars-names').forEach(el => {
-        el.style.opacity = '1';
-    });
+    document.getElementById('director-name').classList.remove('skeleton');
+    document.getElementById('writer-name').classList.remove('skeleton');
+    document.getElementById('stars-names').classList.remove('skeleton');
 }
 
 /**
@@ -362,7 +479,7 @@ function updateMovieCredits(credits) {
 function updateMovieTrailer(videos, images) {
     const trailerContainer = document.getElementById('trailer-container');
     if (!trailerContainer) return;
-
+    
     trailerContainer.innerHTML = ''; // Limpa o container
 
     /**
@@ -441,12 +558,15 @@ function updateMovieTrailer(videos, images) {
                     </div>
                 `;
             });
+            // **CORREÇÃO**: Remove o esqueleto do container do trailer quando o conteúdo é inserido
+            setSkeletonState(false, trailerContainer);
             return;
         }
     }
 
     // Se nenhum trailer for encontrado
     trailerContainer.innerHTML = '<p>Nenhum trailer disponível.</p>';
+    setSkeletonState(false, trailerContainer); // Remove o esqueleto mesmo se não houver trailer
 }
 
 function updateRelatedMovies(related) {
@@ -454,27 +574,61 @@ function updateRelatedMovies(related) {
     if (!carousel) return;
     carousel.innerHTML = ''; // Limpa o conteúdo
 
+    // **BARRA PRECISA**: Dados de filmes relacionados carregados (+15%)
+    loadingBarManager.advance(15);
+
     if (related.results && related.results.length > 0) {
         const moviesToShow = related.results.slice(0, 10);
 
         moviesToShow.forEach(movie => {
+            // **OTIMIZAÇÃO**: Usamos data-src para o lazy loading
             const movieCard = document.createElement('div');
             movieCard.className = 'movie-card';
             movieCard.dataset.movieId = movie.id; // Adiciona o ID do filme ao card
             const posterUrl = movie.poster_path ? `${imageBaseUrl}w342${movie.poster_path}` : 'images/placeholder.png'; // TODO: Crie uma imagem placeholder
             movieCard.innerHTML = `
-                <img src="${posterUrl}" alt="${movie.title}">
+                <img data-src="${posterUrl}" alt="${movie.title}" class="lazy-load">
                 <p>${movie.title.toUpperCase()}</p>
             `;
             carousel.appendChild(movieCard);
         });
 
-        // Lógica de clonagem para o carrossel infinito
+        // **CORREÇÃO**: Clona os cards ANTES de configurar o observer
+        // para que os clones também sejam observados.
         const originalCards = carousel.querySelectorAll('.movie-card');
-        // Clona os primeiros itens e adiciona ao final
         originalCards.forEach(card => {
             carousel.appendChild(card.cloneNode(true));
         });
+
+        // **NOVA ESTRATÉGIA**: Pré-carrega todas as imagens do carrossel em segundo plano.
+        const imageElements = carousel.querySelectorAll('img[data-src]');
+        
+        // Cria uma promessa para cada imagem a ser carregada
+        const imageLoadPromises = Array.from(imageElements).map(imgElement => {
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.src = imgElement.dataset.src;
+                // Resolve a promessa quando a imagem carrega ou dá erro,
+                // para não impedir que as outras apareçam.
+                img.onload = resolve;
+                img.onerror = resolve;
+            });
+        });
+
+        // Quando todas as imagens estiverem no cache do navegador...
+        Promise.all(imageLoadPromises).then(() => {
+            // ...atribui o src para exibi-las.
+            // Como estão no cache, a exibição é instantânea.
+            requestAnimationFrame(() => {
+                imageElements.forEach(imgElement => {
+                    imgElement.src = imgElement.dataset.src;
+                    imgElement.classList.remove('lazy-load');
+                });
+            });
+        });
+
+        // Remove o skeleton do carrossel (agora que o conteúdo real está pronto)
+        carousel.classList.remove('skeleton');
 
     } else {
         carousel.innerHTML = '<p style="text-align: center; width: 100%; color: white;">Nenhum filme relacionado encontrado.</p>';
@@ -755,9 +909,9 @@ function setupExpandableColumn() {
         const sectionName = iconItem.dataset.section;
 
         if (sectionName === activeSection) {
-            closeSection();
+            closeSection(); // Fecha a seção se o mesmo ícone for clicado
         } else {
-            // Abre a nova seção (se outra estiver aberta, ela será substituída)
+            // Abre a nova seção
             openSection(sectionName, iconItem);
         }
     });
@@ -766,6 +920,7 @@ function setupExpandableColumn() {
         resetGalleryState(); // Reseta o estado da galeria (contagem e scroll)
         const isSwitching = activeSection !== null;
 
+        // Remove a classe ativa do ícone antigo
         actionIconsContainer.querySelector('.icon-item.active')?.classList.remove('active');
 
         const oldContentWrapper = innerContentContainer.querySelector('.expandable-content-inner-wrapper');
@@ -780,7 +935,7 @@ function setupExpandableColumn() {
             }, 200); // Duração da transição de opacidade do CSS
         } else {
             // Se for a primeira vez abrindo, apenas atualiza o conteúdo e expande
-            updateContent(sectionName, iconElement, false); // CORREÇÃO: Passando sectionName corretamente
+            updateContent(sectionName, iconElement, false);
             rightColumn.classList.add('content-expanded');
         }
 
@@ -789,8 +944,28 @@ function setupExpandableColumn() {
         activeSection = sectionName;
     }
 
-    function updateContent(sectionName, iconElement, fadeIn = true) {
-        // Cria o novo conteúdo
+    async function updateContent(sectionName, iconElement, fadeIn = true) {
+        // **OTIMIZAÇÃO**: Carregamento da galeria sob demanda
+        if (sectionName === 'gallery' && !currentMovieData.images) {
+            // Mostra um estado de carregamento para a galeria
+            innerContentContainer.innerHTML = `
+                <div class="expandable-content-inner-wrapper" style="text-align: center; padding: 40px 0;">
+                    <i class="fas fa-spinner fa-spin" style="font-size: 24px; color: #888;"></i>
+                    <p style="color: #888; margin-top: 10px;">Carregando galeria...</p>
+                </div>
+            `;
+            try {
+                // Busca os dados da galeria apenas agora
+                const images = await fetchAndProcess(`api.php?images_for=${currentMovieData.details.id}`);
+                currentMovieData.images = images;
+            } catch (error) {
+                console.error("Falha ao carregar dados da galeria:", error);
+                innerContentContainer.innerHTML = `<div class="expandable-content-inner-wrapper"><p>Não foi possível carregar a galeria.</p></div>`;
+                return; // Interrompe a execução se a galeria falhar
+            }
+        }
+
+        // Agora que os dados (se necessários) foram carregados, cria o HTML final
         innerContentContainer.innerHTML = createContentHTML(sectionName, iconElement);
         const newContentWrapper = innerContentContainer.querySelector('.expandable-content-inner-wrapper');
 
@@ -808,9 +983,12 @@ function setupExpandableColumn() {
         actionIconsContainer.querySelector('.icon-item.active')?.classList.remove('active');
         rightColumn.classList.remove('content-expanded');
         activeSection = null;
-        // Limpa o conteúdo ao fechar para não aparecer rapidamente na próxima abertura
+        // Limpa o conteúdo após a animação de fechamento
         setTimeout(() => { innerContentContainer.innerHTML = ''; }, 400);
     }
+
+    // **CORREÇÃO**: Torna a função closeSection acessível globalmente
+    closeActiveSection = closeSection;
 
     function createContentHTML(sectionName, iconElement) {
         const title = iconElement.querySelector('span').textContent.toUpperCase();
@@ -914,20 +1092,8 @@ function setupExpandableColumn() {
         // Função auxiliar para formatar nomes de países
         const countryNames = new Intl.DisplayNames(['pt-BR'], { type: 'region' });
 
-        // O Slogan é especial e será tratado separadamente para ocupar a largura total
-        const slogan = movie.tagline ? `
-            <div class="fact-item slogan">
-                <i class="fas fa-bullhorn fact-icon"></i>
-                <div class="fact-info">
-                    <span class="fact-label">Slogan</span>
-                    <span class="fact-value">${movie.tagline}</span>
-                </div>
-            </div>` : '';
-
         const facts = [
-            { label: 'Título Original', value: movie.original_title, icon: 'fa-film' },
-            { label: 'Status', value: movie.status === 'Released' ? 'Lançado' : movie.status, icon: 'fa-check-circle' },
-            { label: 'Idioma Original', value: new Intl.DisplayNames(['pt-BR'], { type: 'language' }).of(movie.original_language), icon: 'fa-language' },
+            // O Slogan foi movido para a seção de citação principal
             { label: 'Orçamento', value: movie.budget > 0 ? `$${movie.budget.toLocaleString('en-US')}` : 'N/A', icon: 'fa-wallet' },
             { label: 'Receita', value: movie.revenue > 0 ? `$${movie.revenue.toLocaleString('en-US')}` : 'N/A' },
             { label: 'Total de Votos', value: movie.vote_count ? movie.vote_count.toLocaleString('en-US') : 'N/A', icon: 'fa-users' },
@@ -956,8 +1122,8 @@ function setupExpandableColumn() {
                 </div>`;
         }).join('');
 
-        // Combina o slogan (se existir) com os outros itens do grid
-        return `<div class="facts-list">${slogan}${gridItems}</div>`;
+        // Retorna apenas os itens do grid
+        return `<div class="facts-list">${gridItems}</div>`;
     }
 
     function createGalleryHtml(images) {
