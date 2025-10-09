@@ -651,6 +651,84 @@ function setupExpandableColumn() {
 
     if (!actionIconsContainer || !innerContentContainer) return;
 
+    const INITIAL_GALLERY_COUNT = 12;
+    let galleryState = {};
+
+    function resetGalleryState() {
+        galleryState = {
+            backdrops: { count: INITIAL_GALLERY_COUNT, scrollTop: 0 },
+            posters: { count: INITIAL_GALLERY_COUNT, scrollTop: 0 }
+        };
+    }
+
+    // Event listener para os filtros da galeria (usando delegação)
+    innerContentContainer.addEventListener('click', (e) => {
+        const filterBtn = e.target.closest('.filter-btn');
+        const loadMoreBtn = e.target.closest('.load-more-btn');
+        const galleryContainer = innerContentContainer.querySelector('.gallery-container');
+
+        if (loadMoreBtn) {
+            // Salva a posição de rolagem atual ANTES de renderizar novamente
+            const currentScrollTop = galleryContainer ? galleryContainer.scrollTop : 0;
+
+            const activeFilter = innerContentContainer.querySelector('.filter-btn.active')?.dataset.filter || 'backdrops';
+            
+            // Incrementa a contagem apenas para o filtro ativo
+            galleryState[activeFilter].count += 12;
+
+            const galleryGrid = innerContentContainer.querySelector('.gallery-grid');
+
+            if (galleryGrid) {
+                // Renderiza o grid novamente com mais itens
+                galleryGrid.innerHTML = renderGalleryGrid(currentMovieData.images, activeFilter, galleryState[activeFilter].count);
+                
+                // Restaura a posição de rolagem APÓS a renderização
+                // Usamos um pequeno timeout para garantir que o DOM foi atualizado
+                setTimeout(() => {
+                    if (galleryContainer) {
+                        galleryContainer.scrollTop = currentScrollTop;
+                    }
+                }, 0);
+            }
+            return; // Impede que o código do filtro seja executado
+        }
+
+
+        if (!filterBtn) return;
+
+        const filterType = filterBtn.dataset.filter;
+        const galleryGrid = innerContentContainer.querySelector('.gallery-grid');
+
+        if (filterType && galleryGrid) {
+            // Salva a posição de rolagem do filtro antigo
+            const oldFilter = innerContentContainer.querySelector('.filter-btn.active')?.dataset.filter;
+            if (galleryContainer && oldFilter) {
+                galleryState[oldFilter].scrollTop = galleryContainer.scrollTop;
+            }
+
+            // Atualiza o botão ativo
+            innerContentContainer.querySelector('.filter-btn.active')?.classList.remove('active');
+            filterBtn.classList.add('active');
+
+            // Adiciona/remove classe para o layout de duas colunas dos pôsteres
+            if (filterType === 'posters') {
+                galleryGrid.classList.add('posters-active');
+            } else {
+                galleryGrid.classList.remove('posters-active');
+            }
+            // Renderiza novamente o grid com o novo filtro
+            galleryGrid.innerHTML = renderGalleryGrid(currentMovieData.images, filterType, galleryState[filterType].count);
+
+            // Restaura a posição de rolagem para o novo filtro
+            // Usamos setTimeout para garantir que o DOM foi atualizado
+            setTimeout(() => {
+                if (galleryContainer) {
+                    galleryContainer.scrollTop = galleryState[filterType].scrollTop;
+                }
+            }, 0);
+        }
+    });
+
     let activeSection = null;
 
     actionIconsContainer.addEventListener('click', (e) => {
@@ -668,6 +746,7 @@ function setupExpandableColumn() {
     });
 
     function openSection(sectionName, iconElement) {
+        resetGalleryState(); // Reseta o estado da galeria (contagem e scroll)
         const isSwitching = activeSection !== null;
 
         actionIconsContainer.querySelector('.icon-item.active')?.classList.remove('active');
@@ -718,20 +797,31 @@ function setupExpandableColumn() {
 
     function createContentHTML(sectionName, iconElement) {
         const title = iconElement.querySelector('span').textContent.toUpperCase();
-        let content = `<p>Aqui virá o conteúdo detalhado sobre o ${title.toLowerCase()}.</p>`;
+        let headerHtml = `<h3>${title}</h3>`;
+        let contentHtml = `<p>Aqui virá o conteúdo detalhado sobre o ${title.toLowerCase()}.</p>`;
 
         if (sectionName === 'cast' && currentMovieData.credits && currentMovieData.credits.cast) {
-            content = createCastHtml(currentMovieData.credits.cast);
+            contentHtml = createCastHtml(currentMovieData.credits.cast);
         }
 
         if (sectionName === 'gallery' && currentMovieData.images) {
-            content = createGalleryHtml(currentMovieData.images);
+            // Cria um cabeçalho especial com filtros para a galeria
+            headerHtml = `
+                <div class="section-header">
+                    <h3>${title}</h3>
+                    <div class="gallery-filters">
+                        <button class="filter-btn active" data-filter="backdrops">Imagens do Filme</button>
+                        <button class="filter-btn" data-filter="posters">Pôsteres</button>
+                    </div>
+                </div>
+            `;
+            contentHtml = createGalleryHtml(currentMovieData.images);
         }
 
         return `
             <div class="expandable-content-inner-wrapper">
-                <h3>${title}</h3>
-                ${content}
+                ${headerHtml}
+                ${contentHtml}
             </div>
         `;
     }
@@ -761,24 +851,38 @@ function setupExpandableColumn() {
     }
 
     function createGalleryHtml(images) {
-        // Prioriza backdrops, mas usa posters se não houver backdrops
-        const imageList = (images.backdrops && images.backdrops.length > 0) ? images.backdrops : images.posters;
-
-        if (!imageList || imageList.length === 0) {
+        if (!images || (images.backdrops.length === 0 && images.posters.length === 0)) {
             return '<p>Nenhuma imagem disponível na galeria.</p>';
         }
+        
+        // Renderiza o grid inicial com o filtro padrão 'backdrops'
+        const galleryGridHtml = renderGalleryGrid(images, 'backdrops', galleryState.backdrops.count);
+        
+        // Usa um container para aplicar a rolagem, similar ao cast-list
+        return `<div class="gallery-container"><div class="gallery-grid">${galleryGridHtml}</div></div>`;
+    }
 
-        // Limita a 12 imagens para não sobrecarregar
-        const galleryItems = imageList.slice(0, 12).map(img => {
+    function renderGalleryGrid(images, filter, count) {
+        const imageList = images[filter] || [];
+
+        if (imageList.length === 0) {
+            return `<p style="text-align: center; padding: 20px 0; color: #888;">Nenhuma imagem encontrada para este filtro.</p>`;
+        }
+
+        let gridHtml = imageList.slice(0, count).map(img => {
             const imageUrl = `${imageBaseUrl}w500${img.file_path}`;
+            const aspectRatio = filter === 'posters' ? '2 / 3' : '16 / 9';
             return `
-                <div class="gallery-item">
+                <div class="gallery-item" style="aspect-ratio: ${aspectRatio};">
                     <img src="${imageUrl}" alt="Imagem da galeria" loading="lazy">
-                </div>
-            `;
+                </div>`;
         }).join('');
 
-        // Usa um container para aplicar a rolagem, similar ao cast-list
-        return `<div class="gallery-container"><div class="gallery-grid">${galleryItems}</div></div>`;
+        // Adiciona o botão "Carregar Mais" se houver mais imagens disponíveis
+        if (imageList.length > count) {
+            gridHtml += `<div class="load-more-container"><button class="load-more-btn"><i class="fas fa-plus"></i> Carregar Mais</button></div>`;
+        }
+
+        return gridHtml;
     }
 }

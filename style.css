@@ -11,6 +11,11 @@ body {
     color: #333;
 }
 
+/* Variável para controlar a altura máxima do conteúdo expansível (elenco, galeria) */
+:root {
+    --expandable-content-max-height: 230px;
+}
+
 /* --- BARRA DE CARREGAMENTO --- */
 #loading-bar {
     position: fixed;
@@ -659,6 +664,11 @@ main.background-loading::before {
 
 /* --- MEDIA QUERIES PARA RESPONSIVIDADE --- */
 @media (max-width: 950px) {
+    /* Aumenta a altura da galeria e elenco no mobile */
+    :root {
+        --expandable-content-max-height: 450px; /* Valor maior para mobile (ajustado para um tamanho mais proporcional) */
+    }
+
     .container {
         padding: 0 15px;
     }
@@ -920,13 +930,40 @@ main.background-loading::before {
     border-bottom: 2px solid #eee;
 }
 
-/* Variável para controlar a altura máxima da lista do elenco */
-:root {
-    --cast-list-max-height: 230px;
+/* Cabeçalho da seção, usado para alinhar título e filtros */
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 5px;
+    border-bottom: 2px solid #eee;
+}
+
+.section-header h3 {
+    margin: 0;
+    padding: 0;
+    border: none;
+}
+
+.gallery-filters .filter-btn {
+    background: none;
+    border: 1px solid #ccc;
+    border-radius: 15px;
+    padding: 4px 10px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.gallery-filters .filter-btn.active {
+    background-color: #333;
+    color: #fff;
+    border-color: #333;
 }
 
 .cast-list {
-    max-height: var(--cast-list-max-height);
+    max-height: var(--expandable-content-max-height);
     overflow-y: auto;
     padding-right: 10px; /* Espaço para a barra de rolagem */
     margin-right: -10px; /* Compensa o padding para alinhar o conteúdo */
@@ -966,7 +1003,7 @@ main.background-loading::before {
 
 /* --- ESTILOS PARA A GALERIA --- */
 .gallery-container {
-    max-height: var(--cast-list-max-height); /* Reutiliza a mesma variável de altura */
+    max-height: var(--expandable-content-max-height); /* Reutiliza a mesma variável de altura */
     overflow-y: auto;
     padding-right: 10px;
     margin-right: -10px;
@@ -974,14 +1011,79 @@ main.background-loading::before {
 
 .gallery-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    /* Padrão para > 950px e < 500px: 1 coluna para imagens */
+    grid-template-columns: 1fr;
     gap: 10px;
+}
+
+/* Padrão para > 950px e < 500px: 2 colunas para pôsteres */
+.gallery-grid.posters-active {
+    grid-template-columns: repeat(2, 1fr);
+}
+
+/* Breakpoint intermediário para tablets (entre 501px e 950px) */
+@media (max-width: 950px) and (min-width: 501px) {
+    .gallery-grid {
+        /* Imagens do filme com 2 colunas */
+        grid-template-columns: repeat(2, 1fr);
+    }
+    .gallery-grid.posters-active {
+        /* Pôsteres com 3 colunas */
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+.gallery-item {
+    /* Adicionado para garantir que a imagem não ultrapasse o item do grid */
+    overflow: hidden;
+    border-radius: 5px;
+}
+
+.gallery-item img {
+    width: 100%;
+    height: 100%; /* Faz a imagem preencher o aspect-ratio do pai */
+    /* aspect-ratio é agora definido inline pelo JS no .gallery-item */
+    object-fit: cover;
+    /* border-radius foi movido para o .gallery-item */
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.gallery-item:hover img {
+    transform: scale(1.05);
+}
+
+/* --- ESTILOS PARA O BOTÃO "CARREGAR MAIS" --- */
+.load-more-container {
+    /* Ocupa toda a largura do grid para centralizar o botão */
+    grid-column: 1 / -1; 
+    text-align: center;
+    padding: 10px 0;
+}
+
+.load-more-btn {
+    background-color: #f0f0f0;
+    border: 1px solid #ddd;
+    border-radius: 20px;
+    padding: 8px 20px;
+    font-size: 14px;
+    font-weight: 700;
+    color: #555;
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.load-more-btn:hover {
+    background-color: #e0e0e0;
+    color: #333;
+}
+    grid-template-columns: repeat(2, 1fr);
 }
 
 .gallery-item img {
     width: 100%;
     height: auto;
-    aspect-ratio: 16 / 9; /* Mantém a proporção das imagens (backdrops) */
+    /* aspect-ratio é agora definido inline pelo JS */
     object-fit: cover;
     border-radius: 5px;
     cursor: pointer;
