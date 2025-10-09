@@ -400,7 +400,6 @@ main.background-loading::before {
 
 .trailer-container {
     position: relative; /* Para posicionar o ícone de play */
-    flex-grow: 1; /* Permite que o container cresça e ocupe o espaço vertical restante */
     display: flex;
     align-items: center; /* Centraliza verticalmente */
     justify-content: center; /* Centraliza horizontalmente também */
@@ -834,12 +833,21 @@ main.background-loading::before {
 
 /* --- ESTILOS PARA A COLUNA EXPANSÍVEL (ANIMAÇÃO SUAVE) --- */
 
-/* O container do trailer e o título agora são um grid item */
-#trailer-title,
-.trailer-container {
-    /* Transição para opacidade e margem */
-    transition: opacity 0.3s ease-out, margin-top 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+/* Novo wrapper para o trailer para controlar o colapso */
+.trailer-wrapper {
+    display: grid;
+    grid-template-rows: auto 1fr; /* Linha para o título, linha para o conteúdo */
+    transition: grid-template-rows 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden; /* Garante que o conteúdo não vaze durante a animação */
+    flex-grow: 1; /* Faz o wrapper do trailer ocupar o espaço vertical restante */
 }
+
+/* O conteúdo interno do trailer (título e container) ainda tem transição de opacidade */
+.trailer-wrapper > * {
+    transition: opacity 0.2s ease-out, margin-top 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    min-height: 0; /* Ajuda o grid a colapsar corretamente */
+}
+
 
 /* Container que usa grid para animar a altura */
 .expandable-content {
@@ -852,7 +860,7 @@ main.background-loading::before {
 /* Wrapper interno para o conteúdo, para evitar problemas com padding/margin na animação */
 .expandable-content-inner {
     overflow: hidden;
-    position: relative; /* Essencial para o posicionamento absoluto dos filhos */
+    position: relative; /* Essencial para o posicionamento de conteúdo interno */
     opacity: 0;
     transition: opacity 0.2s ease-out;
 }
@@ -871,12 +879,15 @@ main.background-loading::before {
 }
 
 /* O trailer e seu título desaparecem */
-.right-column.content-expanded #trailer-title,
-.right-column.content-expanded .trailer-container {
+.right-column.content-expanded .trailer-wrapper {
+    /* Colapsa o wrapper do trailer para altura zero */
+    grid-template-rows: 0fr 0fr;
+    pointer-events: none; /* Impede cliques enquanto estiver invisível */
+}
+
+.right-column.content-expanded .trailer-wrapper > * {
     opacity: 0;
     margin-top: -20px; /* Puxa para cima para um colapso mais suave */
-    pointer-events: none; /* Impede cliques enquanto estiver invisível */
-    transition: opacity 0.2s ease-out, margin-top 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Estilos para o conteúdo que será inserido dinamicamente */
@@ -898,3 +909,57 @@ main.background-loading::before {
 .icon-item i {
     transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
 }
+
+/* --- ESTILOS PARA O CONTEÚDO EXPANSÍVEL (ELENCO) --- */
+.expandable-content-inner-wrapper h3 {
+    font-size: 14px;
+    font-weight: 700;
+    color: #aaa;
+    margin-bottom: 15px;
+    padding-bottom: 5px;
+    border-bottom: 2px solid #eee;
+}
+
+/* Variável para controlar a altura máxima da lista do elenco */
+:root {
+    --cast-list-max-height: 230px;
+}
+
+.cast-list {
+    max-height: var(--cast-list-max-height);
+    overflow-y: auto;
+    padding-right: 10px; /* Espaço para a barra de rolagem */
+    margin-right: -10px; /* Compensa o padding para alinhar o conteúdo */
+}
+
+.cast-member {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 12px;
+}
+
+.cast-member img {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    object-fit: cover;
+    background-color: #e9e9e9;
+}
+
+.cast-member-info .cast-name {
+    display: block;
+    font-weight: 700;
+    font-size: 15px;
+}
+
+.cast-member-info .cast-character {
+    font-size: 13px;
+    color: #666;
+}
+
+/* Estilização da barra de rolagem para a lista do elenco */
+.cast-list::-webkit-scrollbar { width: 5px; }
+.cast-list::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px;}
+.cast-list::-webkit-scrollbar-thumb { background: #ccc; border-radius: 10px; }
+.cast-list::-webkit-scrollbar-thumb:hover { background: #aaa; }

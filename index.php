@@ -102,9 +102,11 @@
                             </div>
                         </div>
 
-                        <h2 id="trailer-title">TRAILER</h2>
-                        <div id="trailer-container" class="trailer-container">
-                            <!-- O trailer será inserido aqui pelo JavaScript -->
+                        <div class="trailer-wrapper">
+                            <h2 id="trailer-title">TRAILER</h2>
+                            <div id="trailer-container" class="trailer-container">
+                                <!-- O trailer será inserido aqui pelo JavaScript -->
+                            </div>
                         </div>
                     </div>
                 </div>

@@ -1,3 +1,8 @@
+let currentMovieData = {
+    credits: null,
+    // Outros dados do filme podem ser armazenados aqui no futuro
+};
+
 document.addEventListener('DOMContentLoaded', () => {
     // Lógica para o cabeçalho com efeito de scroll
     const header = document.querySelector('.main-header');
@@ -180,7 +185,10 @@ function loadMovieData(movieId) {
             behavior: 'smooth'
         });
 
-        fetchAndProcess(`api.php?movie_id=${movieId}&language=pt-BR`, (movie) => updateMovieDetails(movie, movieId));
+        // Limpa os dados antigos antes de carregar novos
+        currentMovieData.credits = null;
+
+        fetchAndProcess(`api.php?movie_id=${movieId}`, (movie) => updateMovieDetails(movie, movieId));
         fetchAndProcess(`api.php?credits_for=${movieId}`, updateMovieCredits);
         fetchAndProcess(`api.php?related_to=${movieId}`, updateRelatedMovies);
     }, 300); 
@@ -323,6 +331,9 @@ function generateStarRating(rating) {
 }
 
 function updateMovieCredits(credits) {
+    // Armazena todos os créditos para uso posterior (ex: na seção de elenco)
+    currentMovieData.credits = credits;
+
     const director = credits.crew.find(person => person.job === 'Director');
     const writer = credits.crew.find(person => person.department === 'Writing'); // Pega o primeiro roteirista
     const stars = credits.cast.slice(0, 3).map(person => person.name).join(', ');
@@ -347,15 +358,48 @@ function updateMovieTrailer(videos, images) {
 
     trailerContainer.innerHTML = ''; // Limpa o container
 
-    if (videos.results && videos.results.length > 0) {
-        // Procura por um trailer oficial do site YouTube
-        const officialTrailer = videos.results.find(video => 
-            video.site === 'YouTube' && video.type === 'Trailer' && video.official
-        );
-        
-        // Se não encontrar um oficial, pega o primeiro trailer do YouTube que encontrar
-        const trailer = officialTrailer || videos.results.find(video => video.site === 'YouTube' && video.type === 'Trailer');
+    /**
+     * Encontra o melhor trailer disponível com base em uma ordem de prioridade:
+     * 1. Oficial em Português
+     * 2. Qualquer um em Português
+     * 3. Oficial em Inglês
+     * 4. Qualquer um em Inglês
+     * 5. O primeiro trailer da lista
+     */
+    function findBestTrailer(videoResults) {
+        if (!videoResults || videoResults.length === 0) return null;
 
+        const allYoutubeVideos = videoResults.filter(v => v.site === 'YouTube');
+        if (allYoutubeVideos.length === 0) return null;
+
+        // Define uma lista de critérios de busca em ordem de prioridade.
+        // Cada critério é uma função que retorna true se o vídeo corresponder.
+        const priorityList = [
+            v => v.type === 'Trailer' && v.official && v.iso_639_1 === 'pt',
+            v => v.type === 'Teaser'  && v.official && v.iso_639_1 === 'pt',
+            v => v.type === 'Trailer' && v.iso_639_1 === 'pt',
+            v => v.type === 'Teaser'  && v.iso_639_1 === 'pt',
+            v => v.type === 'Trailer' && v.official && v.iso_639_1 === 'en',
+            v => v.type === 'Teaser'  && v.official && v.iso_639_1 === 'en',
+            v => v.type === 'Trailer' && v.iso_639_1 === 'en',
+            v => v.type === 'Teaser'  && v.iso_639_1 === 'en',
+            v => v.type === 'Trailer', // Qualquer trailer
+            v => v.type === 'Teaser',  // Qualquer teaser
+        ];
+
+        // Itera sobre a lista de prioridades e retorna o primeiro vídeo que corresponder.
+        for (const condition of priorityList) {
+            const found = allYoutubeVideos.find(condition);
+            if (found) return found;
+        }
+
+        // Se nenhum dos critérios acima for atendido, retorna o primeiro vídeo do YouTube disponível.
+        return allYoutubeVideos[0];
+    }
+
+    const trailer = findBestTrailer(videos.results);
+
+    if (trailer) {
         if (trailer) {
             let backdropUrl;
             // Tenta pegar a segunda imagem de backdrop. Se não existir, usa a primeira.
@@ -624,29 +668,31 @@ function setupExpandableColumn() {
         const isSwitching = activeSection !== null;
 
         actionIconsContainer.querySelector('.icon-item.active')?.classList.remove('active');
-        iconElement.classList.add('active');
-        activeSection = sectionName;
 
         const oldContentWrapper = innerContentContainer.querySelector('.expandable-content-inner-wrapper');
 
         // Se estivermos trocando de seção, faz o fade-out primeiro
         if (isSwitching && oldContentWrapper) {
             oldContentWrapper.style.opacity = '0';
-
+            
             // Espera o fade-out terminar para trocar o conteúdo
             setTimeout(() => {
-                updateContent(iconElement);
+                updateContent(sectionName, iconElement);
             }, 200); // Duração da transição de opacidade do CSS
         } else {
             // Se for a primeira vez abrindo, apenas atualiza o conteúdo e expande
-            updateContent(iconElement, false); // Atualiza sem fade-in inicial
+            updateContent(sectionName, iconElement, false); // CORREÇÃO: Passando sectionName corretamente
             rightColumn.classList.add('content-expanded');
         }
+
+        // Ativa o novo ícone e atualiza o estado DEPOIS da lógica de transição
+        iconElement.classList.add('active');
+        activeSection = sectionName;
     }
 
-    function updateContent(iconElement, fadeIn = true) {
+    function updateContent(sectionName, iconElement, fadeIn = true) {
         // Cria o novo conteúdo
-        innerContentContainer.innerHTML = createContentHTML(iconElement);
+        innerContentContainer.innerHTML = createContentHTML(sectionName, iconElement);
         const newContentWrapper = innerContentContainer.querySelector('.expandable-content-inner-wrapper');
 
         if (fadeIn) {
@@ -667,12 +713,43 @@ function setupExpandableColumn() {
         setTimeout(() => { innerContentContainer.innerHTML = ''; }, 400);
     }
 
-    function createContentHTML(iconElement) {
+    function createContentHTML(sectionName, iconElement) {
+        const title = iconElement.querySelector('span').textContent.toUpperCase();
+        let content = `<p>Aqui virá o conteúdo detalhado sobre o ${title.toLowerCase()}.</p>`;
+
+        if (sectionName === 'cast' && currentMovieData.credits && currentMovieData.credits.cast) {
+            content = createCastHtml(currentMovieData.credits.cast);
+        }
+
         return `
             <div class="expandable-content-inner-wrapper">
-                <h3>${iconElement.querySelector('span').textContent.toUpperCase()}</h3>
-                <p>Aqui virá o conteúdo detalhado sobre o ${iconElement.querySelector('span').textContent.toLowerCase()}.</p>
+                <h3>${title}</h3>
+                ${content}
             </div>
         `;
+    }
+
+    function createCastHtml(cast) {
+        if (!cast || cast.length === 0) {
+            return '<p>Informações do elenco não disponíveis.</p>';
+        }
+
+        const castList = cast.slice(0, 20).map(member => { // Limita a 20 para performance
+            const profilePic = member.profile_path
+                ? `${imageBaseUrl}w185${member.profile_path}`
+                : 'images/placeholder-person.png'; // Crie uma imagem placeholder para pessoas
+
+            return `
+                <div class="cast-member">
+                    <img src="${profilePic}" alt="${member.name}" loading="lazy">
+                    <div class="cast-member-info">
+                        <span class="cast-name">${member.name}</span>
+                        <span class="cast-character">${member.character}</span>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        return `<div class="cast-list">${castList}</div>`;
     }
 }

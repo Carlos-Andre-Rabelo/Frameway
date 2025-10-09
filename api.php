@@ -41,8 +41,8 @@ if (isset($_GET['movie_id'])) {
 } elseif (isset($_GET['videos_for'])) {
     $movieId = intval($_GET['videos_for']);
     if ($movieId) {
-        // O parâmetro de idioma é útil aqui para obter os trailers corretos
-        $endpoint = $baseUrl . $movieId . '/videos' . $params;
+        // REMOVIDO o $params. Pedimos TODOS os vídeos e filtramos no lado do cliente.
+        $endpoint = $baseUrl . $movieId . '/videos' . "?api_key={$apiKey}";
     }
 }
 
