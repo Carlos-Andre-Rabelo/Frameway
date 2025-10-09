@@ -963,3 +963,32 @@ main.background-loading::before {
 .cast-list::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px;}
 .cast-list::-webkit-scrollbar-thumb { background: #ccc; border-radius: 10px; }
 .cast-list::-webkit-scrollbar-thumb:hover { background: #aaa; }
+
+/* --- ESTILOS PARA A GALERIA --- */
+.gallery-container {
+    max-height: var(--cast-list-max-height); /* Reutiliza a mesma variável de altura */
+    overflow-y: auto;
+    padding-right: 10px;
+    margin-right: -10px;
+}
+
+.gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 10px;
+}
+
+.gallery-item img {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16 / 9; /* Mantém a proporção das imagens (backdrops) */
+    object-fit: cover;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.gallery-item img:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}

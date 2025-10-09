@@ -1,6 +1,7 @@
 let currentMovieData = {
     credits: null,
     // Outros dados do filme podem ser armazenados aqui no futuro
+    images: null,
 };
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -187,6 +188,7 @@ function loadMovieData(movieId) {
 
         // Limpa os dados antigos antes de carregar novos
         currentMovieData.credits = null;
+        currentMovieData.images = null;
 
         fetchAndProcess(`api.php?movie_id=${movieId}`, (movie) => updateMovieDetails(movie, movieId));
         fetchAndProcess(`api.php?credits_for=${movieId}`, updateMovieCredits);
@@ -294,6 +296,7 @@ function updateMovieDetails(movie, movieId) {
         fetch(`api.php?videos_for=${movieId}`).then(res => res.json()),
         fetch(`api.php?images_for=${movieId}`).then(res => res.json())
     ]).then(([videos, images]) => {
+        currentMovieData.images = images; // Armazena as imagens para uso posterior (galeria)
         updateMovieTrailer(videos, images);
     }).catch(error => {
         console.error("Falha ao buscar dados do trailer ou imagens:", error);
@@ -721,6 +724,10 @@ function setupExpandableColumn() {
             content = createCastHtml(currentMovieData.credits.cast);
         }
 
+        if (sectionName === 'gallery' && currentMovieData.images) {
+            content = createGalleryHtml(currentMovieData.images);
+        }
+
         return `
             <div class="expandable-content-inner-wrapper">
                 <h3>${title}</h3>
@@ -751,5 +758,27 @@ function setupExpandableColumn() {
         }).join('');
 
         return `<div class="cast-list">${castList}</div>`;
+    }
+
+    function createGalleryHtml(images) {
+        // Prioriza backdrops, mas usa posters se não houver backdrops
+        const imageList = (images.backdrops && images.backdrops.length > 0) ? images.backdrops : images.posters;
+
+        if (!imageList || imageList.length === 0) {
+            return '<p>Nenhuma imagem disponível na galeria.</p>';
+        }
+
+        // Limita a 12 imagens para não sobrecarregar
+        const galleryItems = imageList.slice(0, 12).map(img => {
+            const imageUrl = `${imageBaseUrl}w500${img.file_path}`;
+            return `
+                <div class="gallery-item">
+                    <img src="${imageUrl}" alt="Imagem da galeria" loading="lazy">
+                </div>
+            `;
+        }).join('');
+
+        // Usa um container para aplicar a rolagem, similar ao cast-list
+        return `<div class="gallery-container"><div class="gallery-grid">${galleryItems}</div></div>`;
     }
 }
