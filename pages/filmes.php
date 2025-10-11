@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Frameway</title>
     
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="../assets/css/style.css">
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -193,6 +193,6 @@
         </a>
     </nav>
 
-    <script src="js/script.js"></script>
+    <script src="../assets/js/script.js"></script>
 </body>
 </html>

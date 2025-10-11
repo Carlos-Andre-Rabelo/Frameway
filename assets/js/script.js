@@ -58,7 +58,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const query = searchInput.value.trim();
         if (query) {
             // Busca pelo filme e carrega o primeiro resultado
-            fetchAndProcess(`api.php?search=${query}`).then((data) => {
+            fetchAndProcess(`../api/api.php?search=${query}`).then((data) => {
                 if (data.results && data.results.length > 0) {
                     const firstMovieId = data.results[0].id;
                     loadMovieData(firstMovieId);
@@ -87,7 +87,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         debounceTimer = setTimeout(() => {
-            fetchAndProcess(`api.php?search=${query}`, searchAbortController.signal).then((data) => {
+            fetchAndProcess(`../api/api.php?search=${query}`, searchAbortController.signal).then((data) => {
                 // Limpa o container e cria o wrapper se ele não existir
                 suggestionsContainer.innerHTML = ''; 
 
@@ -102,7 +102,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         // Cria a imagem do pôster
                         const posterUrl = movie.poster_path 
                             ? `${imageBaseUrl}w92${movie.poster_path}` 
-                            : 'images/placeholder-poster.png'; // Sugestão: crie um placeholder pequeno
+                            : '../assets/images/placeholder-poster.png'; // Sugestão: crie um placeholder pequeno
                         const img = document.createElement('img');
                         img.src = posterUrl;
                         img.alt = movie.title;
@@ -261,14 +261,14 @@ function loadMovieData(movieId, addToHistory = true) {
     if (addToHistory) history.pushState({ movieId: movieId }, '', url);
 
     // **OTIMIZAÇÃO**: Busca os detalhes do filme UMA VEZ e reutiliza a promessa.
-    const detailsPromise = fetchAndProcess(`api.php?movie_id=${movieId}`);
+    const detailsPromise = fetchAndProcess(`../api/api.php?movie_id=${movieId}`);
 
     // Pré-carrega a imagem de fundo usando a promessa de detalhes.
     const backdropPromise = detailsPromise.then(details => {
         loadingBarManager.advance(25); // Peso da imagem de fundo
         if (details && details.backdrop_path) {
             return new Promise(resolve => {
-                const backdropUrl = `${imageBaseUrl}original${details.backdrop_path}`;
+                const backdropUrl = `${imageBaseUrl}original${details.backdrop_path}`; // imageBaseUrl já é um caminho absoluto
                 const img = new Image();
                 img.src = backdropUrl;
                 img.onload = () => resolve(backdropUrl);
@@ -280,7 +280,7 @@ function loadMovieData(movieId, addToHistory = true) {
 
     // 2. **CARREGAMENTO PROGRESSIVO**
     // Etapa 1: Busca dos dados CRÍTICOS (detalhes e créditos)
-    Promise.all([detailsPromise, fetchAndProcess(`api.php?credits_for=${movieId}`)])
+    Promise.all([detailsPromise, fetchAndProcess(`../api/api.php?credits_for=${movieId}`)])
     .then(async ([details, credits]) => {
         // **BARRA PRECISA**: Dados críticos carregados (+40%)
         loadingBarManager.advance(40);
@@ -300,10 +300,10 @@ function loadMovieData(movieId, addToHistory = true) {
     });
 
     // Etapa 2: Busca dos dados SECUNDÁRIOS em paralelo
-    const relatedPromise = fetchAndProcess(`api.php?related_to=${movieId}`);
-    const videosPromise = fetchAndProcess(`api.php?videos_for=${movieId}`);
+    const relatedPromise = fetchAndProcess(`../api/api.php?related_to=${movieId}`);
+    const videosPromise = fetchAndProcess(`../api/api.php?videos_for=${movieId}`);
     // **REVERSÃO**: A busca de imagens volta a ser feita no carregamento inicial
-    const imagesPromise = fetchAndProcess(`api.php?images_for=${movieId}`);
+    const imagesPromise = fetchAndProcess(`../api/api.php?images_for=${movieId}`);
 
     // Atualiza cada seção secundária assim que seus dados chegam
     Promise.all([videosPromise, imagesPromise]).then(([videos, images]) => {
@@ -585,7 +585,7 @@ function updateRelatedMovies(related) {
             const movieCard = document.createElement('div');
             movieCard.className = 'movie-card';
             movieCard.dataset.movieId = movie.id; // Adiciona o ID do filme ao card
-            const posterUrl = movie.poster_path ? `${imageBaseUrl}w342${movie.poster_path}` : 'images/placeholder.png'; // TODO: Crie uma imagem placeholder
+            const posterUrl = movie.poster_path ? `${imageBaseUrl}w342${movie.poster_path}` : '../assets/images/placeholder.png'; // TODO: Crie uma imagem placeholder
             movieCard.innerHTML = `
                 <img data-src="${posterUrl}" alt="${movie.title}" class="lazy-load">
                 <p>${movie.title.toUpperCase()}</p>
@@ -956,7 +956,7 @@ function setupExpandableColumn() {
             `;
             try {
                 // Busca os dados da galeria apenas agora
-                const images = await fetchAndProcess(`api.php?images_for=${currentMovieData.details.id}`);
+                const images = await fetchAndProcess(`../api/api.php?images_for=${currentMovieData.details.id}`);
                 currentMovieData.images = images;
             } catch (error) {
                 console.error("Falha ao carregar dados da galeria:", error);
@@ -1041,7 +1041,7 @@ function setupExpandableColumn() {
         const castList = cast.slice(0, 20).map(member => { // Limita a 20 para performance
             const profilePic = member.profile_path
                 ? `${imageBaseUrl}w185${member.profile_path}`
-                : 'images/placeholder-person.png'; // Crie uma imagem placeholder para pessoas
+                : '../assets/images/placeholder-person.png'; // Crie uma imagem placeholder para pessoas
 
             return `
                 <div class="cast-member">
@@ -1267,7 +1267,7 @@ async function downloadCurrentImage(e) {
     const imageName = imagePath.split('/').pop();
 
     // A URL que vamos chamar para o download via nosso proxy
-    const downloadUrl = `api.php?download_image=${encodeURIComponent(imagePath)}`;
+    const downloadUrl = `../api/api.php?download_image=${encodeURIComponent(imagePath)}`;
 
     try {
         // Mostra um feedback de carregamento no botão
