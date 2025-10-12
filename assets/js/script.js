@@ -41,12 +41,15 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Carrega um filme padrão na inicialização
-    const movieId = 129; // ID padrão para "A Viagem de Chihiro"
-    loadMovieData(movieId);
+    // Pega o ID do filme da URL. Se não houver, usa um padrão.
+    const urlParams = new URLSearchParams(window.location.search);
+    const movieIdFromUrl = urlParams.get('movie');
+    const initialMovieId = movieIdFromUrl ? parseInt(movieIdFromUrl, 10) : 129; // Usa o ID da URL ou o padrão 129
+
+    loadMovieData(initialMovieId);
 
     const searchForm = document.getElementById('search-form');
-    const searchInput = document.getElementById('search-input');
+    const searchInput = document.getElementById('searchInput'); // ID unificado
     const suggestionsContainer = document.getElementById('search-suggestions');
 
     const searchContainer = document.querySelector('.search-container'); // Ainda necessário para as sugestões

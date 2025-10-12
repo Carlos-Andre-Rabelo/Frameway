@@ -22,11 +22,11 @@
             <button class="hamburger-btn" aria-label="Menu">
                 <i class="fas fa-bars"></i>
             </button>
-            <a href="/Frameway/" class="logo">FRAMEWAY</a>
+            <a href="landingpage.php" class="logo">FRAMEWAY</a>
             <nav class="main-nav">
                 <div class="search-container">
                     <form id="search-form" class="search-form">
-                        <input type="text" id="search-input" placeholder="Buscar filme..." aria-label="Buscar filme" autocomplete="off">
+                        <input type="text" id="searchInput" placeholder="Buscar filme..." aria-label="Buscar filme" autocomplete="off">
                         <button type="submit" aria-label="Buscar"><i class="fas fa-search"></i></button>
                     </form>
                     <div id="search-suggestions" class="search-suggestions"></div>
