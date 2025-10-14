@@ -44,6 +44,12 @@ if (isset($_GET['movie_id'])) {
         // REMOVIDO o $params. Pedimos TODOS os vídeos e filtramos no lado do cliente.
         $endpoint = $baseUrl . $movieId . '/videos' . "?api_key={$apiKey}";
     }
+} elseif (isset($_GET['keywords_for'])) {
+    // NOVO: Adiciona o endpoint para buscar palavras-chave
+    $movieId = intval($_GET['keywords_for']);
+    if ($movieId) {
+        $endpoint = $baseUrl . $movieId . '/keywords' . "?api_key={$apiKey}";
+    }
 } elseif (isset($_GET['download_image'])) {
     $imagePath = $_GET['download_image'];
 
@@ -90,7 +96,7 @@ if ($endpoint) {
     
     curl_close($ch);
 } else {
-    $response = json_encode(['error' => 'Requisição inválida. Especifique um dos seguintes: movie_id, credits_for, related_to, search, images_for, videos_for.']);
+    $response = json_encode(['error' => 'Requisição inválida. Especifique um dos seguintes: movie_id, credits_for, related_to, search, images_for, videos_for, keywords_for.']);
     http_response_code(400);
 }
 

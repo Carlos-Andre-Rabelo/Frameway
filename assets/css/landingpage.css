@@ -250,7 +250,7 @@ i {
     color: white;
     display: flex; /* Alterado para flex para o layout 2/3 e 1/3 */
     flex-direction: row; /* Direção horizontal */
-    gap: 16px; /* Espaço reduzido entre o hero e a parte lateral */
+    gap: 12px; /* Espaço reduzido ainda mais */
     margin-bottom: 48px;
     /* Padding removido daqui e aplicado aos filhos */
 }
@@ -262,8 +262,6 @@ i {
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    justify-content: flex-end;
-    padding: 40px;
     transition: transform 0.3s ease;
 }
 
@@ -272,38 +270,85 @@ i {
     border-radius: 16px;
     display: flex;
     flex-direction: column;
-    gap: 16px; /* Espaço reduzido entre as duas novas divisões */
+    gap: 12px; /* Espaço reduzido ainda mais */
     overflow: hidden; /* Garante que os filhos respeitem o border-radius */
 }
 
 .featured-side-top {
     flex: 3; /* Aumenta a proporção para 3/4 da altura */
-    background-color: #000000; /* Parte de cima preta */
     border-radius: 16px;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end; /* Alinha o conteúdo na parte inferior */
+    padding: 24px;
+    color: white;
+    background-size: cover;
+    background-position: center;
+}
+
+.featured-side-top::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    border-radius: 16px; /* CORREÇÃO: Garante que o efeito respeite os cantos arredondados */
+    background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.4) 50%, rgba(0,0,0,0) 100%);
+    backdrop-filter: blur(25px); /* Aumenta o desfoque para melhor legibilidade */
+    z-index: 1;
 }
 
 .featured-side-bottom {
     flex: 1; /* Diminui a proporção para 1/4 da altura */
     display: flex; /* Transforma em container flex para dividir ao meio */
-    gap: 16px; /* Espaço entre as duas metades */
+    gap: 12px; /* Espaço reduzido ainda mais */
 }
 
 .featured-side-bottom-left,
 .featured-side-bottom-right {
     flex: 1; /* Cada metade ocupa 50% do espaço */
-    background-color: #add8e6; /* Azul claro aplicado às metades */
+    background-color: #e8e8ed; /* Cor de fundo neutra como placeholder */
     border-radius: 16px;
+    overflow: hidden; /* Garante que a imagem não vaze dos cantos arredondados */
 }
 
-.featured-hero::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
+.featured-side-bottom img {
     width: 100%;
     height: 100%;
-    background: linear-gradient(90deg, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0.6) 35%, rgba(0, 0, 0, 0) 100%);
-    z-index: 1;
+    object-fit: cover;
+    animation: fadeIn 1s ease-in-out;
+}
+
+/* --- Tags de Gênero no Hero --- */
+.featured-tags {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    z-index: 2;
+    display: flex;
+    gap: 8px;
+    animation: fadeIn 1s ease-in-out 0.2s;
+    animation-fill-mode: backwards;
+}
+
+.tag {
+    padding: 4px 10px; /* Padding reduzido */
+    font-size: 11px; /* Fonte menor */
+    font-weight: 500; /* Fonte um pouco mais fina */
+    color: rgba(255, 255, 255, 0.9);
+    background-color: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 20px;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    white-space: nowrap;
+    transition: transform 0.2s ease, background-color 0.2s ease;
+    cursor: pointer; /* Adiciona o cursor de mãozinha */
+}
+
+.tag:hover {
+    transform: scale(1.05); /* Efeito de pulsar/expandir */
+    background-color: rgba(255, 255, 255, 0.2);
 }
 
 .featured-background {
@@ -320,31 +365,32 @@ i {
 .featured-content {
     position: relative;
     z-index: 2;
-    max-width: 50%;
     animation: slideUp 0.8s ease-out;
 }
 
 .featured-content h2 {
-    font-size: 48px;
+    font-size: 28px; /* Tamanho reduzido para o novo espaço */
     font-weight: 700;
-    margin-bottom: 16px;
+    margin-bottom: 12px;
     text-shadow: 0 2px 10px rgba(0,0,0,0.5);
 }
 
 .featured-content p {
-    font-size: 16px;
-    line-height: 1.6;
-    margin-bottom: 24px;
+    font-size: 14px; /* Tamanho reduzido */
+    line-height: 1.5;
+    margin-bottom: 20px;
     text-shadow: 0 1px 5px rgba(0,0,0,0.5);
+    max-height: 105px; /* Limita a altura (aprox. 5 linhas) */
+    overflow: hidden;
 }
 
 .featured-button {
-    padding: 14px 28px;
+    padding: 10px 20px; /* Padding reduzido */
     border: none;
     border-radius: 8px;
     background-color: var(--bg-color);
     color: var(--text-primary);
-    font-size: 16px;
+    font-size: 14px; /* Fonte reduzida */
     font-weight: 600;
     cursor: pointer;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
@@ -431,6 +477,7 @@ i {
     opacity: 0;
     /* CORREÇÃO: A transição agora é apenas na largura, deixando o flexbox cuidar do layout */
     transition: width 0.4s ease, z-index 0s 0.4s;
+    cursor: pointer; /* Adiciona o cursor de mãozinha */
 }
 
 .movie-card:hover {

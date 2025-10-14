@@ -51,31 +51,62 @@ document.addEventListener('DOMContentLoaded', () => {
      * Busca e exibe o filme em destaque
      */
     async function displayFeaturedMovie() {
-        const movie = await fetchData(`movie_id=${FEATURED_MOVIE_ID}`);
-        if (!movie) {
+        // Otimização: Busca detalhes e imagens em paralelo
+        const [movie, images, keywords] = await Promise.all([
+            fetchData(`movie_id=${FEATURED_MOVIE_ID}`), // Detalhes do filme (inclui gêneros)
+            fetchData(`images_for=${FEATURED_MOVIE_ID}`), // Imagens
+            fetchData(`keywords_for=${FEATURED_MOVIE_ID}`) // Palavras-chave
+        ]);
+
+        if (!movie || !images || !keywords) {
             featuredMovieContainer.innerHTML = '<p>Não foi possível carregar o filme em destaque.</p>';
             return;
         }
 
-        const backdropUrl = movie.backdrop_path ? `${IMAGE_BASE_URL}original${movie.backdrop_path}` : '';
+        // Reduz a resolução da imagem principal de 'original' para 'w1280' para otimizar o carregamento.
+        const backdropUrl = movie.backdrop_path ? `${IMAGE_BASE_URL}w1280${movie.backdrop_path}` : '';
+        
+        // MELHORIA: Filtra a lista de backdrops para remover a imagem que já está sendo usada como fundo principal,
+        // garantindo que as imagens menores sejam diferentes.
+        const availableStills = images.backdrops?.filter(img => img.file_path !== movie.backdrop_path) || [];
+
+        // Pega os dois primeiros frames da lista filtrada.
+        const still1Url = availableStills[0]?.file_path ? `${IMAGE_BASE_URL}w500${availableStills[0].file_path}` : '';
+        const still2Url = availableStills[1]?.file_path ? `${IMAGE_BASE_URL}w500${availableStills[1].file_path}` : '';
+
+        // Combina gêneros e palavras-chave para garantir que tenhamos mais tags
+        const genreNames = movie.genres?.map(g => g.name) || [];
+        const keywordNames = keywords.keywords?.map(k => k.name) || [];
+        const allTags = [...genreNames, ...keywordNames];
+
+        // Pega as 4 primeiras tags da lista combinada
+        const tagsHtml = allTags.slice(0, 4).map(tagName => `<span class="tag">${tagName}</span>`).join('') || '';
 
         // Nova estrutura com divisão 2/3 e 1/3
         featuredMovieContainer.innerHTML = `
             <div class="featured-hero">
-                <img src="${backdropUrl}" class="featured-background" alt="Poster de ${movie.title}">
-                <div class="featured-content">
+                <div class="featured-tags">
+                    ${tagsHtml}
+                </div>
+                <img src="${backdropUrl}" class="featured-background" alt="Cena de ${movie.title}">
+            </div>
+            <div class="featured-side">
+                <div class="featured-side-top" style="background-image: url('${backdropUrl}')">
+                  <div class="featured-content">
                     <h2>${movie.title}</h2>
                     <p>${truncateText(movie.overview, 250)}</p>
                     <button class="featured-button" onclick="window.location.href='../pages/filmes.php?movie=${FEATURED_MOVIE_ID}'">
                         <i class="fas fa-play"></i> Saiba Mais
                     </button>
+                  </div>
                 </div>
-            </div>
-            <div class="featured-side">
-                <div class="featured-side-top"></div>
                 <div class="featured-side-bottom">
-                    <div class="featured-side-bottom-left"></div>
-                    <div class="featured-side-bottom-right"></div>
+                    <div class="featured-side-bottom-left">
+                        ${still1Url ? `<img src="${still1Url}" alt="Frame 1 de ${movie.title}">` : ''}
+                    </div>
+                    <div class="featured-side-bottom-right">
+                        ${still2Url ? `<img src="${still2Url}" alt="Frame 2 de ${movie.title}">` : ''}
+                    </div>
                 </div>
             </div>
         `;
