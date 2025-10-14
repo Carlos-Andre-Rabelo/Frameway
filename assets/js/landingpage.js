@@ -14,7 +14,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- IDs para conteúdo da página ---
     // Altere estes IDs para destacar outros filmes!
-    const FEATURED_MOVIE_ID = 693134; // Duna: Parte Dois
+    const FEATURED_MOVIE_IDS = [
+        693134, // Duna: Parte Dois
+        823464, // Godzilla x Kong: O Novo Império
+        872585, // Oppenheimer
+        787699  // Furiosa: Uma Saga Mad Max
+    ];
+    let currentFeaturedIndex = 0;
+    // Cache para armazenar dados de filmes pré-carregados e evitar o "gap" na transição
+    const featuredMovieCache = new Map();
+
+    let featuredRotationInterval;
+
     // Aumentado o número de filmes no carrossel
     const POPULAR_MOVIE_IDS = [823464, 1011985, 872585, 792307, 572802, 866398, 634492, 1072790]; // Godzilla x Kong, Kung Fu Panda 4, Oppenheimer, Pobres Criaturas, Aquaman 2, Beekeeper, Madame Web, Anyone But You
 
@@ -48,27 +59,63 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     /**
+     * Pré-carrega os dados do próximo filme em segundo plano para uma transição suave.
+     * @param {string} movieId - O ID do filme a ser pré-carregado.
+     */
+    async function preFetchMovieData(movieId) {
+        if (featuredMovieCache.has(movieId)) {
+            return; // Já foi carregado ou está em processo de carregamento.
+        }
+
+        // Armazena a promessa no cache para evitar múltiplas requisições para o mesmo filme.
+        const fetchPromise = Promise.all([
+            fetchData(`movie_id=${movieId}`),
+            fetchData(`images_for=${movieId}`),
+            fetchData(`keywords_for=${movieId}`)
+        ]);
+        featuredMovieCache.set(movieId, fetchPromise);
+
+        try {
+            await fetchPromise; // Espera a conclusão para garantir que os dados estejam prontos.
+        } catch (error) {
+            console.error(`Falha ao pré-carregar dados para o filme ID: ${movieId}`, error);
+            featuredMovieCache.delete(movieId); // Remove a promessa falha do cache.
+        }
+    }
+
+    /**
      * Busca e exibe o filme em destaque
      */
-    async function displayFeaturedMovie() {
-        // Otimização: Busca detalhes e imagens em paralelo
-        const [movie, images, keywords] = await Promise.all([
-            fetchData(`movie_id=${FEATURED_MOVIE_ID}`), // Detalhes do filme (inclui gêneros)
-            fetchData(`images_for=${FEATURED_MOVIE_ID}`), // Imagens
-            fetchData(`keywords_for=${FEATURED_MOVIE_ID}`) // Palavras-chave
-        ]);
+    async function displayFeaturedMovie(movieId) {
+        // Cria um novo elemento de slide para o conteúdo
+        const slideElement = document.createElement('div');
+        slideElement.className = 'featured-slide';
+
+        // Tenta obter os dados do cache. Se não encontrar, busca em tempo real (fallback).
+        const movieDataPromise = featuredMovieCache.get(movieId) || preFetchMovieData(movieId).then(() => featuredMovieCache.get(movieId));
+
+        const [movie, images, keywords] = await movieDataPromise;
 
         if (!movie || !images || !keywords) {
-            featuredMovieContainer.innerHTML = '<p>Não foi possível carregar o filme em destaque.</p>';
             return;
         }
 
-        // Reduz a resolução da imagem principal de 'original' para 'w1280' para otimizar o carregamento.
-        const backdropUrl = movie.backdrop_path ? `${IMAGE_BASE_URL}w1280${movie.backdrop_path}` : '';
+        // --- ALGORITMO INTELIGENTE DE SELEÇÃO DE BACKDROP ---
+        // Prioriza backdrops que contenham o título do filme (identificados pela tag de idioma).
+        let mainBackdropPath = movie.backdrop_path; // Fallback para o backdrop padrão.
+        if (images.backdrops && images.backdrops.length > 0) {
+            const backdropWithPtTitle = images.backdrops.find(b => b.iso_639_1 === 'pt');
+            const backdropWithEnTitle = images.backdrops.find(b => b.iso_639_1 === 'en');
+            const anyBackdropWithTitle = images.backdrops.find(b => b.iso_639_1 !== null);
+
+            // Define o caminho do arquivo com base na prioridade.
+            mainBackdropPath = backdropWithPtTitle?.file_path || backdropWithEnTitle?.file_path || anyBackdropWithTitle?.file_path || mainBackdropPath;
+        }
+        const backdropUrl = mainBackdropPath ? `${IMAGE_BASE_URL}w1280${mainBackdropPath}` : '';
         
         // MELHORIA: Filtra a lista de backdrops para remover a imagem que já está sendo usada como fundo principal,
         // garantindo que as imagens menores sejam diferentes.
-        const availableStills = images.backdrops?.filter(img => img.file_path !== movie.backdrop_path) || [];
+        const availableStills = images.backdrops?.filter(img => img.file_path !== mainBackdropPath) || [];
 
         // Pega os dois primeiros frames da lista filtrada.
         const still1Url = availableStills[0]?.file_path ? `${IMAGE_BASE_URL}w500${availableStills[0].file_path}` : '';
@@ -82,12 +129,21 @@ document.addEventListener('DOMContentLoaded', () => {
         // Pega as 4 primeiras tags da lista combinada
         const tagsHtml = allTags.slice(0, 4).map(tagName => `<span class="tag">${tagName}</span>`).join('') || '';
 
+        // Gera o HTML para os indicadores (bolinhas)
+        const indicatorsHtml = FEATURED_MOVIE_IDS.map((_, index) => {
+            const isActive = index === currentFeaturedIndex;
+            // A barra de progresso agora tem um ID para ser facilmente encontrada
+            const progressHtml = isActive ? '<div id="indicator-progress-bar" class="indicator-progress"></div>' : '';
+            return `<span class="indicator-dot ${isActive ? 'active' : ''}" data-index="${index}">${progressHtml}</span>`;
+        }).join('');
+
         // Nova estrutura com divisão 2/3 e 1/3
-        featuredMovieContainer.innerHTML = `
+        slideElement.innerHTML = `
             <div class="featured-hero">
                 <div class="featured-tags">
                     ${tagsHtml}
                 </div>
+                <div class="featured-indicators">${indicatorsHtml}</div>
                 <img src="${backdropUrl}" class="featured-background" alt="Cena de ${movie.title}">
             </div>
             <div class="featured-side">
@@ -95,7 +151,7 @@ document.addEventListener('DOMContentLoaded', () => {
                   <div class="featured-content">
                     <h2>${movie.title}</h2>
                     <p>${truncateText(movie.overview, 250)}</p>
-                    <button class="featured-button" onclick="window.location.href='../pages/filmes.php?movie=${FEATURED_MOVIE_ID}'">
+                    <button class="featured-button" onclick="window.location.href='../pages/filmes.php?movie=${movieId}'">
                         <i class="fas fa-play"></i> Saiba Mais
                     </button>
                   </div>
@@ -110,6 +166,71 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             </div>
         `;
+
+        // Adiciona o novo slide ao container principal
+        featuredMovieContainer.appendChild(slideElement);
+
+        // SINCRONIZAÇÃO: Adiciona o listener para o fim da animação da nova barra de progresso
+        const progressBar = slideElement.querySelector('#indicator-progress-bar');
+        if (progressBar) {
+            // Usamos 'once: true' para garantir que o listener seja executado apenas uma vez por barra
+            progressBar.addEventListener('animationend', rotate, { once: true });
+        }
+
+        // Inicia o pré-carregamento do próximo filme da fila.
+        const nextIndexToPreFetch = (currentFeaturedIndex + 1) % FEATURED_MOVIE_IDS.length;
+        const nextMovieToPreFetchId = FEATURED_MOVIE_IDS[nextIndexToPreFetch];
+        preFetchMovieData(nextMovieToPreFetchId);
+
+        return slideElement;
+    }
+
+    /**
+     * Troca o filme em destaque para um índice específico.
+     */
+    async function changeFeaturedMovie(index) {
+        currentFeaturedIndex = index;
+        const nextMovieId = FEATURED_MOVIE_IDS[currentFeaturedIndex];
+        
+        const oldSlide = featuredMovieContainer.querySelector('.featured-slide.active');
+        
+        // Cria e adiciona o novo slide (ele começa com opacity 0)
+        const newSlide = await displayFeaturedMovie(nextMovieId);
+
+        // Força o navegador a processar o novo slide antes de iniciar a transição
+        requestAnimationFrame(() => {
+            if (oldSlide) oldSlide.classList.remove('active');
+            newSlide.classList.add('active');
+        });
+
+        // Remove o slide antigo do DOM após a transição de fade-out terminar
+        if (oldSlide) {
+            oldSlide.addEventListener('transitionend', () => {
+                oldSlide.remove();
+            }, { once: true });
+        }
+    }
+
+    // Função que executa a rotação, agora chamada pelo fim da animação
+    const rotate = () => {
+        const nextIndex = (currentFeaturedIndex + 1) % FEATURED_MOVIE_IDS.length;
+        changeFeaturedMovie(nextIndex);
+    };
+
+    /**
+     * Inicia a rotação automática dos filmes em destaque e configura a pausa no hover.
+     */
+    function startFeaturedMovieRotation() {
+        // A rotação agora é controlada pelo evento 'animationend'.
+        // A lógica de hover agora pausa/retoma a ANIMAÇÃO CSS.
+        // O CSS já cuida disso com a regra:
+        // .featured-section:hover .indicator-progress { animation-play-state: paused; }
+        // O JavaScript não precisa mais gerenciar o intervalo.
+        // A primeira chamada para 'rotate' acontecerá quando a primeira barra de progresso terminar.
+        const initialProgressBar = document.getElementById('indicator-progress-bar');
+        if (initialProgressBar) {
+            initialProgressBar.addEventListener('animationend', rotate, { once: true });
+        }
     }
 
     /**
@@ -259,8 +380,24 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // Adiciona listener para os indicadores do carrossel de destaque
+    featuredMovieContainer.addEventListener('click', (e) => {
+        const indicator = e.target.closest('.indicator-dot');
+        if (indicator && indicator.dataset.index) {
+            const index = parseInt(indicator.dataset.index, 10);
+            changeFeaturedMovie(index);
+        }
+    });
+
     // --- Inicia o carregamento da página ---
-    displayFeaturedMovie();
+    // Pré-carrega o primeiro filme e então o exibe.
+    preFetchMovieData(FEATURED_MOVIE_IDS[0]).then(async () => {
+        featuredMovieContainer.innerHTML = ''; // Limpa o shimmer inicial
+        const firstSlide = await displayFeaturedMovie(FEATURED_MOVIE_IDS[0]);
+        requestAnimationFrame(() => {
+            firstSlide.classList.add('active');
+        });
+    });
     displayPopularMovies();
 
     /**

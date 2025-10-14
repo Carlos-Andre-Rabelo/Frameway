@@ -253,6 +253,21 @@ i {
     gap: 12px; /* Espaço reduzido ainda mais */
     margin-bottom: 48px;
     /* Padding removido daqui e aplicado aos filhos */
+    position: relative; /* Essencial para o posicionamento dos slides */
+}
+
+/* Cada slide é posicionado absolutamente dentro da seção de destaque */
+.featured-slide {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    gap: 12px;
+    opacity: 0;
+    transition: opacity 0.8s ease-in-out; /* Transição de cross-fade */
+    z-index: 1;
 }
 
 .featured-hero {
@@ -263,6 +278,11 @@ i {
     display: flex;
     flex-direction: column;
     transition: transform 0.3s ease;
+}
+
+.featured-slide.active {
+    opacity: 1;
+    z-index: 2; /* Garante que o slide ativo fique na frente */
 }
 
 .featured-side {
@@ -294,7 +314,7 @@ i {
     top: 0; left: 0; width: 100%; height: 100%;
     border-radius: 16px; /* CORREÇÃO: Garante que o efeito respeite os cantos arredondados */
     background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.4) 50%, rgba(0,0,0,0) 100%);
-    backdrop-filter: blur(25px); /* Aumenta o desfoque para melhor legibilidade */
+    backdrop-filter: blur(80px); /* Aumenta o desfoque para 100px */
     z-index: 1;
 }
 
@@ -336,8 +356,8 @@ i {
     font-size: 11px; /* Fonte menor */
     font-weight: 500; /* Fonte um pouco mais fina */
     color: rgba(255, 255, 255, 0.9);
-    background-color: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    background-color: rgba(0, 0, 0, 0.2); /* Fundo preto com 20% de opacidade */
+    border: 1px solid rgba(255, 255, 255, 0.1); /* Borda branca sutil */
     border-radius: 20px;
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
@@ -348,7 +368,59 @@ i {
 
 .tag:hover {
     transform: scale(1.05); /* Efeito de pulsar/expandir */
-    background-color: rgba(255, 255, 255, 0.2);
+    background-color: rgba(0, 0, 0, 0.3); /* Fica um pouco mais escuro no hover */
+}
+
+/* --- Indicadores do Carrossel de Destaque --- */
+.featured-indicators {
+    position: absolute;
+    bottom: 15px; /* Um pouco mais para cima */
+    left: 50%; /* Centraliza horizontalmente */
+    transform: translateX(-50%); /* Ajuste fino para centralização perfeita */
+    z-index: 2;
+    display: flex;
+    gap: 8px;
+}
+
+.indicator-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: rgba(0, 0, 0, 0.25); /* Cor escura para a bolinha inativa */
+    cursor: pointer;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(5px);
+}
+
+.indicator-dot:hover {
+    background-color: rgba(255, 255, 255, 0.7);
+}
+
+.indicator-dot.active {
+    width: 24px; /* Expande a largura quando ativo */
+    border-radius: 8px;
+    background-color: rgba(0, 0, 0, 0.25); /* A bolinha ativa tem a mesma cor de fundo */
+    position: relative; /* Para conter a barra de progresso */
+    overflow: hidden; /* Para cortar a barra de progresso */
+}
+
+.indicator-progress {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%; /* Ocupa 100% da largura do pai (.indicator-dot.active) */
+    background-color: rgba(255, 255, 255, 0.9); /* Cor branca para o progresso */
+    border-radius: 8px; /* Mantém os cantos arredondados */
+    /* Otimização da animação: Usando transform para fluidez */
+    transform: scaleX(0);
+    transform-origin: left; /* Garante que a escala comece da esquerda */
+    animation: fillProgress 20s linear forwards;
+}
+
+/* Pausa a animação da barra de progresso quando o mouse está sobre a seção */
+.featured-section:hover .indicator-progress {
+    animation-play-state: paused;
 }
 
 .featured-background {
@@ -578,6 +650,21 @@ i {
     background-size: 800px 100%;
     display: inline-block;
     position: relative;
+    overflow: hidden; /* Esconde o pseudo-elemento que vaza */
+}
+
+/* Otimização da Animação: Usando transform para fluidez */
+.loading-shimmer::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: linear-gradient(to right, 
+        transparent 0%, 
+        rgba(255,255,255,0.5) 50%, 
+        transparent 100%);
     animation: shimmer 1.5s linear infinite;
 }
 
@@ -596,11 +683,22 @@ i {
 @keyframes shimmer {
     0% { background-position: -468px 0; }
     100% { background-position: 468px 0; }
+    0% {
+        transform: translateX(-100%);
+    }
+    100% {
+        transform: translateX(100%);
+    }
 }
 
 @keyframes fadeIn {
     from { opacity: 0; }
     to { opacity: 1; }
+}
+
+@keyframes fillProgress {
+    from { transform: scaleX(0); }
+    to { transform: scaleX(1); }
 }
 
 @keyframes slideUp {
