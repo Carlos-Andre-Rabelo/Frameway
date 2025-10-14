@@ -87,12 +87,26 @@ document.addEventListener('DOMContentLoaded', () => {
             movies.forEach((movie, index) => {
                 if (movie && movie.poster_path) {
                     // Aumentada a resolução da imagem para w300
-                    const posterUrl = `${IMAGE_BASE_URL}w300${movie.poster_path}`;
+                    const posterUrl = `${IMAGE_BASE_URL}w342${movie.poster_path}`;
                     const movieCard = document.createElement('div');
                     movieCard.className = 'movie-card';
                     movieCard.dataset.movieId = movie.id; // Adiciona o ID para o redirecionamento
                     movieCard.style.animationDelay = `${index * 0.1}s`; // Efeito cascata
-                    movieCard.innerHTML = `<img src="${posterUrl}" alt="${movie.title}">`;
+                    
+                    // REFEITO: Nova estrutura com card-expander para a animação correta
+                    movieCard.innerHTML = `
+                        <div class="card-inner">
+                            <div class="card-front">
+                                <img src="${posterUrl}" alt="${movie.title}">
+                            </div>
+                        </div>
+                        <div class="card-expander">
+                            <div class="card-back">
+                                <div class="card-back-content">
+                                    <h3>${movie.title}</h3>
+                                </div>
+                            </div>
+                        </div>`;
                     popularMoviesGrid.appendChild(movieCard);
                 }
             });
@@ -102,6 +116,9 @@ document.addEventListener('DOMContentLoaded', () => {
             originalCards.forEach(card => {
                 popularMoviesGrid.appendChild(card.cloneNode(true));
             });
+
+            // Inicia o pré-carregamento dos backdrops em segundo plano
+            preloadBackdrops(movies);
         });
     }
 
@@ -204,6 +221,32 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Inicia o carregamento da página ---
     displayFeaturedMovie();
     displayPopularMovies();
+
+    /**
+     * Pré-carrega os backdrops dos filmes em segundo plano para uma transição de hover suave.
+     * @param {Array<Object>} movies - A lista de objetos de filmes.
+     */
+    function preloadBackdrops(movies) {
+        movies.forEach(movie => {
+            if (movie && movie.backdrop_path) {
+                const backdropUrl = `${IMAGE_BASE_URL}w780${movie.backdrop_path}`;
+                const img = new Image();
+                img.src = backdropUrl;
+
+                // Quando a imagem do backdrop terminar de carregar...
+                img.onload = () => {
+                    // ...encontra todos os cards correspondentes (original e clone)
+                    const cardsToUpdate = document.querySelectorAll(`.movie-card[data-movie-id='${movie.id}']`);
+                    cardsToUpdate.forEach(card => {
+                        const cardBack = card.querySelector('.card-expander .card-back');
+                        if (cardBack) {
+                            cardBack.style.backgroundImage = `url('${backdropUrl}')`;
+                        }
+                    });
+                };
+            }
+        });
+    }
 
     /**
      * Configura toda a lógica do carrossel, incluindo botões e swipe.

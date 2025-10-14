@@ -43,6 +43,12 @@ i {
     flex-direction: column;
     flex-shrink: 0;
     border-right: 1px solid var(--border-color);
+    /* --- Alterações para a barra lateral fixa --- */
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh; /* Ocupa 100% da altura da tela */
+    z-index: 1100; /* Garante que fique acima de outros elementos */
 }
 
 .sidebar-header {
@@ -90,6 +96,7 @@ i {
 .main-content {
     flex-grow: 1;
     padding: 24px 48px;
+    margin-left: 240px; /* Adiciona margem para compensar a largura da sidebar fixa */
     position: relative; /* Necessário para o posicionamento fixo da busca */
     min-width: 0; /* CORREÇÃO: Impede que o container se estique por causa do carrossel */
 }
@@ -340,8 +347,8 @@ i {
 .carousel {
     display: flex;
     gap: 24px;
-    transition: transform 0.5s ease-in-out;
     padding: 0 10px; /* Adiciona padding para os cards não colarem nas bordas */
+    transition: transform 0.5s ease-in-out;
 }
 
 .carousel-arrow {
@@ -377,20 +384,83 @@ i {
 }
 
 .movie-card {
+    position: relative; /* Necessário para o z-index no hover */
     border-radius: 12px;
-    overflow: hidden;
-    box-shadow: 0 4px 12px var(--shadow-color);
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-    cursor: pointer;
     flex-shrink: 0; /* Impede que os cards encolham no container flex */
-    width: 160px; /* Largura dos pôsteres reduzida ainda mais */
+    width: 160px;
+    height: 240px; /* Altura fixa (proporção 2:3 de 160px) */
     animation: fadeIn 0.5s ease-out forwards;
     opacity: 0;
+    /* CORREÇÃO: A transição agora é apenas na largura, deixando o flexbox cuidar do layout */
+    transition: width 0.4s ease, z-index 0s 0.4s;
 }
 
 .movie-card:hover {
-    transform: scale(1.05);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    z-index: 20; /* Traz o card para frente dos outros */
+    transition-delay: 0s;
+    width: 320px; /* Expande a largura */
+}
+
+.card-inner {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    transition: opacity 0.4s ease, transform 0.4s ease;
+    border-radius: 12px;
+    overflow: hidden; /* Garante que o conteúdo interno respeite o border-radius */
+    box-shadow: 0 4px 12px var(--shadow-color);
+}
+
+.movie-card:hover .card-inner {
+    opacity: 0; /* Esconde o poster no hover */
+}
+
+.card-front {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background-color: #ddd; /* Cor de fundo enquanto a imagem carrega */
+}
+
+.card-expander {
+    position: absolute;
+    /* CORREÇÃO: Garante que o expander ocupe o espaço correto */
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    transition: opacity 0.4s ease 0.1s; /* Pequeno delay para o fade-in */
+    overflow: hidden;
+    border-radius: 12px;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.25);
+}
+
+.movie-card:hover .card-expander {
+    opacity: 1;
+}
+
+.card-back {
+    /* Ocupa todo o espaço do expander */
+    width: 100%;
+    height: 100%;
+    background-color: #222;
+    background-size: cover;
+    background-position: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    color: white;
+}
+
+.card-back::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.4) 50%, rgba(0,0,0,0) 100%);
 }
 
 .movie-card img {
@@ -398,6 +468,21 @@ i {
     height: 100%;
     object-fit: cover;
     display: block;
+}
+.card-back-content {
+    position: relative;
+    z-index: 2;
+    padding: 16px;
+    width: 100%;
+}
+.card-back-content h3 {
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 1.2;
+    /* Garante que o texto não quebre de forma estranha durante a animação */
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
 }
 
 /* --- Animações e Shimmers de Carregamento --- */
@@ -418,9 +503,8 @@ i {
 }
 
 .card-shimmer {
-    width: 100%;
-    padding-bottom: 150%; /* Proporção de poster */
-    height: 0;
+    width: 160px;
+    height: 240px;
     border-radius: 12px;
 }
 
