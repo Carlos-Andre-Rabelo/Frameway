@@ -90,20 +90,26 @@ i {
 .main-content {
     flex-grow: 1;
     padding: 24px 48px;
-    overflow-y: auto;
+    position: relative; /* Necessário para o posicionamento fixo da busca */
+    min-width: 0; /* CORREÇÃO: Impede que o container se estique por causa do carrossel */
 }
 
 .main-header {
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-start; /* Alinha o perfil à esquerda */
     align-items: center;
-    margin-bottom: 32px;
+    margin-bottom: 32px; /* Mantém o espaçamento inferior */
+    /* O header agora é estático e rola com a página */
 }
 
 /* --- ESTILOS DA BARRA DE PESQUISA (SINCRONIZADO COM STYLE.CSS) --- */
 .search-container {
-    position: relative;
-    width: 400px;
+    /* --- Barra de pesquisa totalmente independente e fixa --- */
+    position: fixed; /* Fixa na janela de visualização */
+    top: 24px; /* Distância do topo, alinhado com o padding do main-content */
+    right: 60px; /* Aumenta a margem da direita */
+    width: 250px; /* Diminui mais o tamanho da barra */
+    z-index: 1001; /* Garante que fique acima do conteúdo */
 }
 
 .search-form {
@@ -152,8 +158,8 @@ i {
     position: absolute;
     top: 100%;
     left: 0;
-    width: 100%;
-    z-index: 1000;
+    width: 100%;    
+    z-index: 1002; /* Aumentado para ficar acima do header (z-index: 1001) e mostrar o blur */
     background-color: rgba(255, 255, 255, 0.3); /* Sincronizado com style.css */
     backdrop-filter: blur(10px); /* Sincronizado com style.css */
     -webkit-backdrop-filter: blur(10px);
@@ -232,7 +238,7 @@ i {
 /* --- Seção de Destaque --- */
 .featured-section {
     position: relative;
-    height: 400px;
+    height: 350px; /* Altura do hero reduzida */
     border-radius: 16px;
     overflow: hidden;
     color: white;
@@ -323,10 +329,51 @@ i {
     font-weight: 500;
 }
 
-.movies-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+/* --- ESTILOS DO CARROSSEL (ADAPTADO DE STYLE.CSS) --- */
+.carousel-wrapper {
+    position: relative;
+    overflow: hidden;
+    padding: 10px 0; /* Adiciona espaço vertical para as setas não ficarem coladas */
+    margin: 0 -10px; /* Compensa o padding para alinhar com o conteúdo */
+}
+
+.carousel {
+    display: flex;
     gap: 24px;
+    transition: transform 0.5s ease-in-out;
+    padding: 0 10px; /* Adiciona padding para os cards não colarem nas bordas */
+}
+
+.carousel-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: rgba(255, 255, 255, 0.9);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    font-size: 20px;
+    cursor: pointer;
+    z-index: 10;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    transition: background-color 0.2s, transform 0.2s;
+}
+
+.carousel-arrow:hover {
+    background-color: #fff;
+    transform: translateY(-50%) scale(1.1);
+}
+
+.carousel-arrow.prev {
+    left: -10px;
+}
+.carousel-arrow.next {
+    right: -10px;
 }
 
 .movie-card {
@@ -335,6 +382,8 @@ i {
     box-shadow: 0 4px 12px var(--shadow-color);
     transition: transform 0.3s ease, box-shadow 0.3s ease;
     cursor: pointer;
+    flex-shrink: 0; /* Impede que os cards encolham no container flex */
+    width: 160px; /* Largura dos pôsteres reduzida ainda mais */
     animation: fadeIn 0.5s ease-out forwards;
     opacity: 0;
 }

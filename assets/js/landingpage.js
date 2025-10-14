@@ -15,7 +15,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- IDs para conteúdo da página ---
     // Altere estes IDs para destacar outros filmes!
     const FEATURED_MOVIE_ID = 693134; // Duna: Parte Dois
-    const POPULAR_MOVIE_IDS = [823464, 1011985, 872585, 792307, 572802]; // Godzilla x Kong, Kung Fu Panda 4, Oppenheimer, Pobres Criaturas, O Abutre
+    // Aumentado o número de filmes no carrossel
+    const POPULAR_MOVIE_IDS = [823464, 1011985, 872585, 792307, 572802, 866398, 634492, 1072790]; // Godzilla x Kong, Kung Fu Panda 4, Oppenheimer, Pobres Criaturas, Aquaman 2, Beekeeper, Madame Web, Anyone But You
 
     /**
      * Função genérica para buscar dados da API
@@ -73,21 +74,35 @@ document.addEventListener('DOMContentLoaded', () => {
     /**
      * Busca e exibe os filmes populares
      */
-    async function displayPopularMovies() {
+    function displayPopularMovies() {
         popularMoviesGrid.innerHTML = ''; // Limpa os shimmers de carregamento
 
-        for (const id of POPULAR_MOVIE_IDS) {
-            const movie = await fetchData(`movie_id=${id}`);
-            if (movie && movie.poster_path) {
-                const posterUrl = `${IMAGE_BASE_URL}w500${movie.poster_path}`;
-                const movieCard = document.createElement('div');
-                movieCard.className = 'movie-card';
-                movieCard.dataset.movieId = id; // Adiciona o ID para o redirecionamento
-                movieCard.style.animationDelay = `${POPULAR_MOVIE_IDS.indexOf(id) * 0.1}s`; // Efeito cascata
-                movieCard.innerHTML = `<img src="${posterUrl}" alt="${movie.title}">`;
-                popularMoviesGrid.appendChild(movieCard);
-            }
-        }
+        // CORREÇÃO: Inicia a lógica do carrossel imediatamente para que os botões funcionem
+        setupCarouselLogic();
+
+        // Busca todos os filmes em paralelo
+        const moviePromises = POPULAR_MOVIE_IDS.map(id => fetchData(`movie_id=${id}`));
+
+        Promise.all(moviePromises).then(movies => {
+            movies.forEach((movie, index) => {
+                if (movie && movie.poster_path) {
+                    // Aumentada a resolução da imagem para w300
+                    const posterUrl = `${IMAGE_BASE_URL}w300${movie.poster_path}`;
+                    const movieCard = document.createElement('div');
+                    movieCard.className = 'movie-card';
+                    movieCard.dataset.movieId = movie.id; // Adiciona o ID para o redirecionamento
+                    movieCard.style.animationDelay = `${index * 0.1}s`; // Efeito cascata
+                    movieCard.innerHTML = `<img src="${posterUrl}" alt="${movie.title}">`;
+                    popularMoviesGrid.appendChild(movieCard);
+                }
+            });
+
+            // Após todos os cards serem adicionados, duplica-os para o efeito de loop infinito
+            const originalCards = popularMoviesGrid.querySelectorAll('.movie-card');
+            originalCards.forEach(card => {
+                popularMoviesGrid.appendChild(card.cloneNode(true));
+            });
+        });
     }
 
     /**
@@ -189,4 +204,156 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Inicia o carregamento da página ---
     displayFeaturedMovie();
     displayPopularMovies();
+
+    /**
+     * Configura toda a lógica do carrossel, incluindo botões e swipe.
+     * (Lógica adaptada de script.js)
+     */
+    function setupCarouselLogic() {
+        const carousel = document.getElementById('popularMoviesGrid');
+        const prevBtn = document.getElementById('popular-prev-btn');
+        const nextBtn = document.getElementById('popular-next-btn');
+        if (!carousel || !prevBtn || !nextBtn) return;
+
+        let isTransitioning = false;
+        let currentIndex = 0;
+        
+        // Variáveis para a funcionalidade de arrastar (swipe)
+        let isDragging = false;
+        let startPos = 0;
+        let currentTranslate = 0;
+        let velocity = 0;
+        let lastMoveTime = 0;
+        let lastMovePos = 0;
+
+        const getCardWidth = () => {
+            const firstCard = carousel.querySelector('.movie-card');
+            if (!firstCard) return 0;
+            const carouselStyle = window.getComputedStyle(carousel);
+            const gap = parseInt(carouselStyle.gap, 10) || 0;
+            // CORREÇÃO: O cálculo deve incluir a largura do card + o espaçamento (gap)
+            return firstCard.offsetWidth + gap;
+        }
+
+        carousel.addEventListener('transitionend', () => {
+            isTransitioning = false;
+            const originalCardCount = carousel.querySelectorAll('.movie-card').length / 2;
+
+            // CORREÇÃO: A condição deve ser estritamente igual para o salto ocorrer no momento exato.
+            if (currentIndex === originalCardCount) {
+                currentIndex = 0;
+                carousel.style.transition = 'none';
+                carousel.style.transform = `translateX(0)`;
+                carousel.offsetHeight; 
+                carousel.style.transition = '';
+            }
+
+            if (currentIndex < 0) {
+                currentIndex = originalCardCount - 1;
+                const cardWidth = getCardWidth();
+                carousel.style.transition = 'none';
+                carousel.style.transform = `translateX(-${currentIndex * cardWidth}px)`;
+                carousel.offsetHeight;
+                carousel.style.transition = '';
+            }
+        });
+
+        nextBtn.addEventListener('click', () => {
+            if (isTransitioning || carousel.children.length <= 1) return;
+            isTransitioning = true;
+            
+            const cardWidth = getCardWidth();
+            currentIndex++;
+            carousel.style.transform = `translateX(-${currentIndex * cardWidth}px)`;
+        });
+
+        prevBtn.addEventListener('click', () => {
+            if (isTransitioning || carousel.children.length <= 1) return;
+            isTransitioning = true;
+
+            const cardWidth = getCardWidth();
+
+            if (currentIndex === 0) {
+                const originalCardCount = carousel.querySelectorAll('.movie-card').length / 2;
+                currentIndex = originalCardCount;
+                carousel.style.transition = 'none';
+                carousel.style.transform = `translateX(-${currentIndex * cardWidth}px)`;
+                carousel.offsetHeight;
+                carousel.style.transition = '';
+            }
+
+            requestAnimationFrame(() => {
+                currentIndex--;
+                carousel.style.transform = `translateX(-${currentIndex * cardWidth}px)`;
+            });
+        });
+
+        // --- LÓGICA DE ARRASTAR (SWIPE) ---
+        const getTranslateX = () => {
+            const style = window.getComputedStyle(carousel);
+            const matrix = new DOMMatrix(style.transform);
+            return matrix.m41;
+        }
+
+        const setTranslateX = (x) => {
+            carousel.style.transform = `translateX(${x}px)`;
+        }
+
+        const dragStart = (e) => {
+            if (isTransitioning || carousel.children.length <= 1) return;
+            isDragging = true;
+            startPos = e.type.includes('mouse') ? e.pageX : e.touches[0].pageX;
+            lastMovePos = startPos;
+            lastMoveTime = performance.now();
+            velocity = 0;
+            currentTranslate = getTranslateX();
+            carousel.style.transition = 'none';
+        };
+
+        const dragMove = (e) => {
+            if (!isDragging) return;
+            const currentPosition = e.type.includes('mouse') ? e.pageX : e.touches[0].pageX;
+            const diff = currentPosition - startPos;
+            setTranslateX(currentTranslate + diff);
+
+            const now = performance.now();
+            const elapsed = now - lastMoveTime;
+            if (elapsed > 10) {
+                const distance = currentPosition - lastMovePos;
+                velocity = distance / elapsed;
+                lastMoveTime = now;
+                lastMovePos = currentPosition;
+            }
+        };
+
+        const dragEnd = () => {
+            if (!isDragging) return;
+            isDragging = false;
+
+            const cardWidth = getCardWidth();
+            const currentPosition = getTranslateX();
+            const momentumFactor = 120; 
+            const momentumDistance = velocity * momentumFactor;
+            let finalPosition = currentPosition + momentumDistance;
+
+            currentIndex = Math.round(-finalPosition / cardWidth);
+
+            const originalCardCount = carousel.querySelectorAll('.movie-card').length / 2;
+            currentIndex = Math.max(0, Math.min(currentIndex, originalCardCount));
+
+            finalPosition = -currentIndex * cardWidth;
+
+            carousel.style.transition = 'transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1)';
+            setTranslateX(finalPosition);
+            isTransitioning = true;
+        };
+
+        carousel.addEventListener('mousedown', dragStart);
+        carousel.addEventListener('touchstart', dragStart, { passive: true });
+        carousel.addEventListener('mousemove', dragMove);
+        carousel.addEventListener('touchmove', dragMove, { passive: true });
+        carousel.addEventListener('mouseup', dragEnd);
+        carousel.addEventListener('mouseleave', dragEnd);
+        carousel.addEventListener('touchend', dragEnd);
+    }
 });

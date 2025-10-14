@@ -28,15 +28,16 @@
         </aside>
 
         <main class="main-content">
+            <!-- A barra de pesquisa foi movida para fora do header para ser um elemento independente -->
+            <div class="search-container">
+                <form id="search-form" class="search-form">
+                    <input type="text" id="searchInput" placeholder="Buscar filmes..." autocomplete="off">
+                    <button type="submit" aria-label="Buscar"><i class="fas fa-search"></i></button>
+                </form>
+                <div id="search-suggestions" class="search-suggestions"></div>
+            </div>
+
             <header class="main-header">
-                <!-- Estrutura da barra de pesquisa atualizada para ser idêntica à de filmes.php -->
-                <div class="search-container">
-                    <form id="search-form" class="search-form">
-                        <input type="text" id="searchInput" placeholder="Buscar filmes..." autocomplete="off">
-                        <button type="submit" aria-label="Buscar"><i class="fas fa-search"></i></button>
-                    </form>
-                    <div id="search-suggestions" class="search-suggestions"></div>
-                </div>
                 <div class="user-profile">
                     <i class="fas fa-bell"></i>
                     <img src="https://i.pravatar.cc/40?u=jennywilson" alt="Avatar do Usuário">
@@ -53,11 +54,17 @@
                     <h2>Populares no Momento</h2>
                     <a href="#" class="learn-more">Ver mais</a>
                 </div>
-                <div class="movies-grid" id="popularMoviesGrid">
-                    <div class="loading-shimmer card-shimmer"></div>
-                    <div class="loading-shimmer card-shimmer"></div>
-                    <div class="loading-shimmer card-shimmer"></div>
-                    <div class="loading-shimmer card-shimmer"></div>
+                <!-- Estrutura de grid substituída pela estrutura de carrossel -->
+                <div class="carousel-wrapper">
+                    <button id="popular-prev-btn" class="carousel-arrow prev" aria-label="Anterior">&#10094;</button>
+                    <div class="carousel" id="popularMoviesGrid">
+                        <!-- Shimmers de carregamento -->
+                        <div class="loading-shimmer card-shimmer"></div>
+                        <div class="loading-shimmer card-shimmer"></div>
+                        <div class="loading-shimmer card-shimmer"></div>
+                        <div class="loading-shimmer card-shimmer"></div>
+                    </div>
+                    <button id="popular-next-btn" class="carousel-arrow next" aria-label="Próximo">&#10095;</button>
                 </div>
             </section>
         </main>
