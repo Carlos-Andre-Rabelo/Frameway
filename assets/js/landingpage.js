@@ -59,14 +59,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const backdropUrl = movie.backdrop_path ? `${IMAGE_BASE_URL}original${movie.backdrop_path}` : '';
 
+        // Nova estrutura com divisão 2/3 e 1/3
         featuredMovieContainer.innerHTML = `
-            <img src="${backdropUrl}" class="featured-background" alt="Poster de ${movie.title}">
-            <div class="featured-content">
-                <h2>${movie.title}</h2>
-                <p>${truncateText(movie.overview, 250)}</p>
-                <button class="featured-button" onclick="window.location.href='../pages/filmes.php?movie=${FEATURED_MOVIE_ID}'">
-                    <i class="fas fa-play"></i> Saiba Mais
-                </button>
+            <div class="featured-hero">
+                <img src="${backdropUrl}" class="featured-background" alt="Poster de ${movie.title}">
+                <div class="featured-content">
+                    <h2>${movie.title}</h2>
+                    <p>${truncateText(movie.overview, 250)}</p>
+                    <button class="featured-button" onclick="window.location.href='../pages/filmes.php?movie=${FEATURED_MOVIE_ID}'">
+                        <i class="fas fa-play"></i> Saiba Mais
+                    </button>
+                </div>
+            </div>
+            <div class="featured-side">
+                <div class="featured-side-top"></div>
+                <div class="featured-side-bottom">
+                    <div class="featured-side-bottom-left"></div>
+                    <div class="featured-side-bottom-right"></div>
+                </div>
             </div>
         `;
     }

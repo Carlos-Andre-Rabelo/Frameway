@@ -36,7 +36,7 @@ i {
 
 /* --- Barra Lateral (Sidebar) --- */
 .sidebar {
-    width: 240px;
+    width: 220px; /* Largura reduzida */
     background-color: var(--sidebar-bg);
     padding: 24px;
     display: flex;
@@ -96,7 +96,7 @@ i {
 .main-content {
     flex-grow: 1;
     padding: 24px 48px;
-    margin-left: 240px; /* Adiciona margem para compensar a largura da sidebar fixa */
+    margin-left: 220px; /* Ajustado para a nova largura da sidebar */
     position: relative; /* Necessário para o posicionamento fixo da busca */
     min-width: 0; /* CORREÇÃO: Impede que o container se estique por causa do carrossel */
 }
@@ -244,27 +244,65 @@ i {
 
 /* --- Seção de Destaque --- */
 .featured-section {
-    position: relative;
     height: 350px; /* Altura do hero reduzida */
     border-radius: 16px;
     overflow: hidden;
     color: white;
+    display: flex; /* Alterado para flex para o layout 2/3 e 1/3 */
+    flex-direction: row; /* Direção horizontal */
+    gap: 16px; /* Espaço reduzido entre o hero e a parte lateral */
+    margin-bottom: 48px;
+    /* Padding removido daqui e aplicado aos filhos */
+}
+
+.featured-hero {
+    flex: 2; /* Ocupa 2/3 do espaço */
+    position: relative;
+    border-radius: 16px;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
     padding: 40px;
-    margin-bottom: 48px;
     transition: transform 0.3s ease;
 }
 
-.featured-section::before {
+.featured-side {
+    flex: 1; /* Ocupa 1/3 do espaço */
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px; /* Espaço reduzido entre as duas novas divisões */
+    overflow: hidden; /* Garante que os filhos respeitem o border-radius */
+}
+
+.featured-side-top {
+    flex: 3; /* Aumenta a proporção para 3/4 da altura */
+    background-color: #000000; /* Parte de cima preta */
+    border-radius: 16px;
+}
+
+.featured-side-bottom {
+    flex: 1; /* Diminui a proporção para 1/4 da altura */
+    display: flex; /* Transforma em container flex para dividir ao meio */
+    gap: 16px; /* Espaço entre as duas metades */
+}
+
+.featured-side-bottom-left,
+.featured-side-bottom-right {
+    flex: 1; /* Cada metade ocupa 50% do espaço */
+    background-color: #add8e6; /* Azul claro aplicado às metades */
+    border-radius: 16px;
+}
+
+.featured-hero::before {
     content: '';
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background: linear-gradient(90deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.6) 35%, rgba(0,0,0,0) 100%);
+    background: linear-gradient(90deg, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0.6) 35%, rgba(0, 0, 0, 0) 100%);
     z-index: 1;
 }
 
