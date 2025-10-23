@@ -50,6 +50,23 @@ if (isset($_GET['movie_id'])) {
     if ($movieId) {
         $endpoint = $baseUrl . $movieId . '/keywords' . "?api_key={$apiKey}";
     }
+} elseif (isset($_GET['trending_week'])) {
+    // MELHORIA: Usa o endpoint 'discover' para buscar as novidades mais relevantes,
+    // em vez de apenas as tendências gerais.
+    $today = date('Y-m-d');
+    $oneMonthAgo = date('Y-m-d', strtotime('-30 days'));
+    $discoverParams = "&sort_by=popularity.desc&primary_release_date.gte={$oneMonthAgo}&primary_release_date.lte={$today}&vote_count.gte=25";
+    $endpoint = "https://api.themoviedb.org/3/discover/movie" . $params . $discoverParams;
+} elseif (isset($_GET['popular_movies'])) {
+    // MELHORIA: Usa o endpoint 'discover' para refinar a busca por filmes populares.
+    // Filtra por filmes lançados nos últimos 45 dias e com um número mínimo de votos
+    // para garantir relevância e remover ruído.
+    $today = date('Y-m-d');
+    $threeMonthsAgo = date('Y-m-d', strtotime('-90 days')); // Janela de 90 dias para mais resultados
+    $discoverParams = "&sort_by=popularity.desc&primary_release_date.gte={$threeMonthsAgo}&primary_release_date.lte={$today}&vote_count.gte=50";
+    
+    // O endpoint agora é 'discover/movie'
+    $endpoint = "https://api.themoviedb.org/3/discover/movie" . $params . $discoverParams;
 } elseif (isset($_GET['download_image'])) {
     $imagePath = $_GET['download_image'];
 
@@ -96,7 +113,7 @@ if ($endpoint) {
     
     curl_close($ch);
 } else {
-    $response = json_encode(['error' => 'Requisição inválida. Especifique um dos seguintes: movie_id, credits_for, related_to, search, images_for, videos_for, keywords_for.']);
+    $response = json_encode(['error' => 'Requisição inválida. Especifique um dos seguintes: movie_id, credits_for, related_to, search, images_for, videos_for, keywords_for, trending_week, popular_movies.']);
     http_response_code(400);
 }
 

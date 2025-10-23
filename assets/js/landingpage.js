@@ -13,21 +13,13 @@ document.addEventListener('DOMContentLoaded', () => {
     let searchAbortController = new AbortController();
 
     // --- IDs para conteúdo da página ---
-    // Altere estes IDs para destacar outros filmes!
-    const FEATURED_MOVIE_IDS = [
-        693134, // Duna: Parte Dois
-        823464, // Godzilla x Kong: O Novo Império
-        872585, // Oppenheimer
-        787699  // Furiosa: Uma Saga Mad Max
-    ];
+    // Os filmes em destaque e populares agora são buscados dinamicamente.
+    let FEATURED_MOVIE_IDS = [];
     let currentFeaturedIndex = 0;
     // Cache para armazenar dados de filmes pré-carregados e evitar o "gap" na transição
     const featuredMovieCache = new Map();
 
     let featuredRotationInterval;
-
-    // Aumentado o número de filmes no carrossel
-    const POPULAR_MOVIE_IDS = [823464, 1011985, 872585, 792307, 572802, 866398, 634492, 1072790]; // Godzilla x Kong, Kung Fu Panda 4, Oppenheimer, Pobres Criaturas, Aquaman 2, Beekeeper, Madame Web, Anyone But You
 
     /**
      * Função genérica para buscar dados da API
@@ -236,20 +228,17 @@ document.addEventListener('DOMContentLoaded', () => {
     /**
      * Busca e exibe os filmes populares
      */
-    function displayPopularMovies() {
+    async function displayPopularMovies() {
         popularMoviesGrid.innerHTML = ''; // Limpa os shimmers de carregamento
+    
+        try {
+            const data = await fetchData('popular_movies');
+            const popularMovies = data.results.slice(0, 20); // Pega os 20 mais populares
 
-        // CORREÇÃO: Inicia a lógica do carrossel imediatamente para que os botões funcionem
-        setupCarouselLogic();
-
-        // Busca todos os filmes em paralelo
-        const moviePromises = POPULAR_MOVIE_IDS.map(id => fetchData(`movie_id=${id}`));
-
-        Promise.all(moviePromises).then(movies => {
-            movies.forEach((movie, index) => {
+            popularMovies.forEach((movie, index) => {
                 if (movie && movie.poster_path) {
                     // Aumentada a resolução da imagem para w300
-                    const posterUrl = `${IMAGE_BASE_URL}w342${movie.poster_path}`;
+                    const posterUrl = `${IMAGE_BASE_URL}w342${movie.poster_path}`; // Já temos o poster_path
                     const movieCard = document.createElement('div');
                     movieCard.className = 'movie-card';
                     movieCard.dataset.movieId = movie.id; // Adiciona o ID para o redirecionamento
@@ -279,9 +268,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 popularMoviesGrid.appendChild(card.cloneNode(true));
             });
 
+            // CORREÇÃO: Inicia a lógica do carrossel APÓS os cards serem criados, passando a contagem correta.
+            setupCarouselLogic(popularMovies.length);
+
             // Inicia o pré-carregamento dos backdrops em segundo plano
-            preloadBackdrops(movies);
-        });
+            preloadBackdrops(popularMovies);
+        } catch (error) {
+            console.error("Falha ao carregar filmes populares:", error);
+            popularMoviesGrid.innerHTML = '<p>Não foi possível carregar os filmes populares.</p>';
+        }
     }
 
     /**
@@ -389,14 +384,33 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // --- Inicia o carregamento da página ---
-    // Pré-carrega o primeiro filme e então o exibe.
-    preFetchMovieData(FEATURED_MOVIE_IDS[0]).then(async () => {
-        featuredMovieContainer.innerHTML = ''; // Limpa o shimmer inicial
-        const firstSlide = await displayFeaturedMovie(FEATURED_MOVIE_IDS[0]);
-        requestAnimationFrame(() => {
-            firstSlide.classList.add('active');
-        });
+    /**
+     * Função principal que inicializa o conteúdo dinâmico da página.
+     */
+    async function initializePage() {
+        // Busca os filmes em destaque (tendências da semana)
+        const trendingData = await fetchData('trending_week');
+        if (trendingData && trendingData.results) {
+            FEATURED_MOVIE_IDS = trendingData.results.slice(0, 4).map(movie => movie.id);
+
+            // Inicia o carrossel de destaque com o primeiro filme da lista
+            await preFetchMovieData(FEATURED_MOVIE_IDS[0]);
+            featuredMovieContainer.innerHTML = ''; // Limpa o shimmer inicial
+            const firstSlide = await displayFeaturedMovie(FEATURED_MOVIE_IDS[0]);
+            requestAnimationFrame(() => {
+                firstSlide.classList.add('active');
+            });
+        }
+        // Inicia o carregamento do carrossel de populares em paralelo
+        displayPopularMovies();
+    }
+
+    // Inicia o carregamento da página
+    initializePage();
+
+    /**
+     * Pré-carrega os backdrops dos filmes em segundo plano para uma transição de hover suave.
+     * @param {Array<Object>} movies - A lista de objetos de filmes.
     });
     displayPopularMovies();
 
@@ -430,12 +444,13 @@ document.addEventListener('DOMContentLoaded', () => {
      * Configura toda a lógica do carrossel, incluindo botões e swipe.
      * (Lógica adaptada de script.js)
      */
-    function setupCarouselLogic() {
+    function setupCarouselLogic(movieCount) {
         const carousel = document.getElementById('popularMoviesGrid');
         const prevBtn = document.getElementById('popular-prev-btn');
         const nextBtn = document.getElementById('popular-next-btn');
-        if (!carousel || !prevBtn || !nextBtn) return;
+        if (!carousel || !prevBtn || !nextBtn || movieCount === 0) return;
 
+        const originalCardCount = movieCount;
         let isTransitioning = false;
         let currentIndex = 0;
         
@@ -450,15 +465,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const getCardWidth = () => {
             const firstCard = carousel.querySelector('.movie-card');
             if (!firstCard) return 0;
-            const carouselStyle = window.getComputedStyle(carousel);
-            const gap = parseInt(carouselStyle.gap, 10) || 0;
-            // CORREÇÃO: O cálculo deve incluir a largura do card + o espaçamento (gap)
+            const carouselStyle = window.getComputedStyle(carousel); // Pega os estilos computados do carrossel
+            const gap = parseInt(carouselStyle.gap, 10) || 0; // Pega o valor do 'gap'
+            // CORREÇÃO DEFINITIVA: O cálculo da translação precisa da largura do card MAIS o espaçamento (gap).
             return firstCard.offsetWidth + gap;
         }
 
         carousel.addEventListener('transitionend', () => {
             isTransitioning = false;
-            const originalCardCount = carousel.querySelectorAll('.movie-card').length / 2;
 
             // CORREÇÃO: A condição deve ser estritamente igual para o salto ocorrer no momento exato.
             if (currentIndex === originalCardCount) {
@@ -495,7 +509,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const cardWidth = getCardWidth();
 
             if (currentIndex === 0) {
-                const originalCardCount = carousel.querySelectorAll('.movie-card').length / 2;
                 currentIndex = originalCardCount;
                 carousel.style.transition = 'none';
                 carousel.style.transform = `translateX(-${currentIndex * cardWidth}px)`;
@@ -559,8 +572,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
             currentIndex = Math.round(-finalPosition / cardWidth);
 
-            const originalCardCount = carousel.querySelectorAll('.movie-card').length / 2;
-            currentIndex = Math.max(0, Math.min(currentIndex, originalCardCount));
+            // Limita o índice para garantir que não ultrapasse os limites dos filmes originais
+            currentIndex = Math.max(0, Math.min(currentIndex, originalCardCount - 1));
 
             finalPosition = -currentIndex * cardWidth;
 

@@ -313,7 +313,6 @@ i {
     position: absolute;
     top: 0; left: 0; width: 100%; height: 100%;
     border-radius: 16px; /* CORREÇÃO: Garante que o efeito respeite os cantos arredondados */
-    background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.4) 50%, rgba(0,0,0,0) 100%);
     backdrop-filter: blur(80px); /* Aumenta o desfoque para 100px */
     z-index: 1;
 }
@@ -437,6 +436,11 @@ i {
 .featured-content {
     position: relative;
     z-index: 2;
+    /* CORREÇÃO: Transforma o content em um container flex para controlar o overflow */
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1; /* Faz o container ocupar todo o espaço vertical disponível */
+    overflow: hidden; /* Impede que os filhos vazem */
     animation: slideUp 0.8s ease-out;
 }
 
@@ -445,6 +449,7 @@ i {
     font-weight: 700;
     margin-bottom: 12px;
     text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+    overflow-wrap: break-word; /* CORREÇÃO: Garante que títulos longos quebrem a linha corretamente */
 }
 
 .featured-content p {
@@ -452,8 +457,15 @@ i {
     line-height: 1.5;
     margin-bottom: 20px;
     text-shadow: 0 1px 5px rgba(0,0,0,0.5);
-    max-height: 105px; /* Limita a altura (aprox. 5 linhas) */
+    /* CORREÇÃO: Remove a altura máxima fixa e permite que a sinopse encolha */
+    flex-shrink: 1; /* Permite que o parágrafo encolha se não houver espaço */
     overflow: hidden;
+    /* Adiciona reticências se o texto for cortado */
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 5; /* Limita a um máximo de 5 linhas, mas encolherá se necessário */
+    line-clamp: 5; /* Padrão para compatibilidade */
+    text-overflow: ellipsis;
 }
 
 .featured-button {
